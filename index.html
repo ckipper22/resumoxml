@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Processador de XMLs para Cadastro de Produtos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7fafc;
+        }
+        .table-responsive {
+            overflow-x: auto;
+        }
+        /* Garantindo que a tabela seja responsiva mas legível */
+        table {
+            min-width: 1400px; 
+        }
+        th, td {
+            padding: 10px;
+            font-size: 0.85rem;
+            vertical-align: top;
+        }
+        .code-meaning {
+            display: block;
+            font-size: 0.75rem;
+            color: #4a5568;
+            margin-top: 3px;
+        }
+        .lot-info {
+            font-size: 0.75rem;
+            color: #2b6cb0; /* Cor azul para destaque de lote */
+            font-weight: 500;
+        }
+        /* As classes de classificação foram ligeiramente ajustadas para incluir o texto de comparação */
+        .classificacao-positiva { background-color: #d1fae5; color: #065f46; font-weight: 600; }
+        .classificacao-negativa { background-color: #fee2e2; color: #991b1b; font-weight: 600; }
+        .classificacao-neutra { background-color: #eff6ff; color: #1e40af; font-weight: 600; }
+        
+        /* Estilo para a Info Adicional e PMC - DESTAQUE MÁXIMO (Nova Coluna) */
+        .inf-ad-prod-highlight {
+            background-color: #f0f9ff; /* Lightest Blue background */
+            color: #1e40af; /* Dark Indigo text */
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 6px;
+            display: block;
+            border: 1px solid #bae6fd;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            margin-top: 4px;
+        }
+        .pmc-highlight {
+            background-color: #fefcbf; /* Light Yellow/Cream */
+            color: #92400e; /* Dark Brown/Orange text */
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 6px;
+            display: block;
+            border: 1px solid #fde68a;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .price-cell {
+            text-align: right;
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8">
+
+    <h1 class="text-3xl font-bold text-gray-800 border-b-4 border-blue-500 pb-2 mb-6 rounded-md">
+        Processador de XMLs para Cadastro de Produtos
+    </h1>
+
+    <div id="inputArea" class="bg-white p-4 sm:p-6 shadow-lg rounded-xl mb-8 border border-gray-200">
+        <label for="xmlInput" class="block text-lg font-medium text-gray-700 mb-3">
+            Selecione um ou mais arquivos XML de NF-e de Compra:
+        </label>
+        <input type="file" id="xmlInput" multiple accept=".xml" class="block w-full text-sm text-gray-500
+            file:mr-4 file:py-2 file:px-4
+            file:rounded-lg file:border-0
+            file:text-sm file:font-semibold
+            file:bg-blue-50 file:text-blue-700
+            hover:file:bg-blue-100 cursor-pointer">
+    </div>
+
+    <!-- Seção de Contexto Fiscal (INCLUSÃO DA INFORMAÇÃO DO USUÁRIO) -->
+    <div id="fiscalLegend" class="bg-indigo-50 p-5 shadow-inner rounded-xl mb-8 border-l-4 border-indigo-400">
+        <h2 class="text-xl font-semibold text-indigo-800 mb-3">Contexto Fiscal de PIS/COFINS (Medicamentos)</h2>
+        <ul class="list-disc ml-5 text-gray-700 space-y-2">
+            <li>
+                <strong class="text-indigo-900">Lista Positiva:</strong> Isento ou Alíquota Zero/Suspensão. Crédito presumido, anulação do débito, não incidência na revenda.
+            </li>
+            <li>
+                <strong class="text-indigo-900">Lista Negativa (Monofásico):</strong> Indústria paga com alíquota majorada. Revenda tem Alíquota Zero (CST 04).
+            </li>
+            <li>
+                <strong class="text-indigo-900">Lista Neutra (Regime Geral):</strong> PIS/COFINS cobrado em cada etapa (Crédito na compra, débito na venda - CST 01/02/03/49/99).
+            </li>
+        </ul>
+        <p class="mt-4 text-sm text-indigo-700 font-semibold">
+            *A classificação exibida na tabela prioriza a informação interna do fornecedor (POS/NEG/NEU no infAdProd), usando o CST Fiscal como referência secundária.
+        </p>
+    </div>
+    <!-- Fim da Seção de Contexto Fiscal -->
+
+    <div id="resultsArea">
+        <p class="text-gray-600">Aguardando a seleção dos arquivos XML...</p>
+    </div>
+
+    <script>
+        document.getElementById('xmlInput').addEventListener('change', handleFileSelect);
+
+        const resultsArea = document.getElementById('resultsArea');
+        const parser = new DOMParser();
+
+        // --- Mapeamentos Fiscais Completos ---
+        const CSOSN_MEANINGS = {
+            '00': 'CST - Tributada integralmente', '10': 'CST - Tributada e com ST', '20': 'CST - Com redução da Base de Cálculo',
+            '30': 'CST - Isenta / Não tributada e com ST', '40': 'CST - Isenta', '41': 'CST - Não tributada',
+            '50': 'CST - Com suspensão', '51': 'CST - Com diferimento', '60': 'CST - ICMS cobrado por ST (Substituído)',
+            '70': 'CST - Com redução da BC e cobrança do ICMS por ST', '90': 'CST - Outras',
+            // CSOSN ICMS (Simples Nacional - 3 dígitos)
+            '101': 'CSOSN - Tributada SN com permissão de crédito', '102': 'CSOSN - Tributada SN sem permissão de crédito',
+            '103': 'CSOSN - Isenção ICMS SN para faixa de receita bruta', '201': 'CSOSN - Tributada SN com crédito e ICMS cobrado por ST',
+            '202': 'CSOSN - Tributada SN sem crédito e ICMS cobrado por ST', '203': 'CSOSN - Isenção ICMS SN para faixa de receita bruta e com cobrança do ICMS por ST',
+            '300': 'CSOSN - Imune (Produto Imune ao ICMS)', '400': 'CSOSN - Não tributada (Isenção legal ICMS/Remessa)',
+            '500': 'CSOSN - ICMS cobrado anteriormente por ST (Substituído)', '900': 'CSOSN - Outros (demais casos)',
+        };
+
+        const PIS_COFINS_MEANINGS = {
+            // Saída (Débito) - Grupos 0X e 49/99
+            '01': 'Saída: Tributável com Alíquota Básica', '02': 'Saída: Tributável com Alíquota Diferenciada', 
+            '03': 'Saída: Tributável por Unidade de Medida', '04': 'Saída: Monofásica – Revenda a Alíquota Zero (Lista Negativa)',
+            '05': 'Saída: Substituição Tributária', '06': 'Saída: Tributável a Alíquota Zero (Lista Positiva)',
+            '07': 'Saída: Operação Isenta da Contribuição (Lista Positiva)', '08': 'Saída: Operação sem Incidência (Imune - Lista Positiva)',
+            '09': 'Saída: Operação com Suspensão da Contribuição (Lista Positiva)', '49': 'Saída: Outras Operações de Saída',
+            // Entrada (Crédito) - Grupos 5X (Não Cumulativo) e 6X (Crédito Presumido)
+            '50': 'Entrada: Crédito Não Cumulativo - Vinculado a Receita Tributada', '51': 'Entrada: Crédito Não Cumulativo - Vinculado a Receita Não Tributada',
+            '52': 'Entrada: Crédito Não Cumulativo - Vinculado a Exportação', '53': 'Entrada: Crédito Não Cumulativo - Vinculado a Tributada e Não-Tributada',
+            '54': 'Entrada: Crédito Não Cumulativo - Vinculado a Tributada e Exportação', '55': 'Entrada: Crédito Não Cumulativo - Vinculado a Não-Tributada e Exportação',
+            '56': 'Entrada: Crédito Não Cumulativo - Vinculado a Todas as Receitas', '60': 'Entrada: Crédito Presumido - Vinculado a Receita Tributada',
+            '61': 'Entrada: Crédito Presumido - Vinculado a Receita Não Tributada', '62': 'Entrada: Crédito Presumido - Vinculado a Exportação',
+            '63': 'Entrada: Crédito Presumido - Vinculado a Tributada e Não-Tributada', '64': 'Entrada: Crédito Presumido - Vinculado a Tributada e Exportação',
+            '65': 'Entrada: Crédito Presumido - Vinculado a Não-Tributada e Exportação', '66': 'Entrada: Crédito Presumido - Vinculado a Todas as Receitas',
+            '99': 'Outras Operações',
+        };
+        // --- Fim Mapeamentos Fiscais ---
+
+        /**
+         * Determina a classificação fiscal (Positiva, Negativa, Neutra) com base no CST PIS/COFINS.
+         * @param {string} cst - O CST de PIS ou COFINS.
+         * @returns {Object} { classification: string, cssClass: string }
+         */
+        function getFiscalClassification(cst) {
+            // A classificação é baseada no CST de Saída do Fornecedor (o que indica a tributação do produto na cadeia).
+            switch (cst) {
+                case '04': // Monofásico - Revenda a Alíquota Zero
+                    return { classification: 'Lista Negativa (Monofásico - CST)', cssClass: 'classificacao-negativa' };
+                
+                case '06': // Alíquota Zero
+                case '07': // Isenta
+                case '08': // Sem Incidência / Imune
+                case '09': // Suspensão
+                    // Estes códigos representam não-tributação na revenda, alinhado com o conceito de Lista Positiva.
+                    return { classification: 'Lista Positiva (Isento/Alíq. Zero - CST)', cssClass: 'classificacao-positiva' };
+                
+                case '01': // Tributável com Alíquota Básica
+                case '02': // Tributável com Alíquota Diferenciada
+                case '03': // Tributável por Unidade de Medida
+                case '49': // Outras
+                case '99': // Outras
+                    // Estes códigos implicam regime geral/cumulativo, alinhado com o conceito de Lista Neutra.
+                    return { classification: 'Lista Neutra (Regime Geral - CST)', cssClass: 'classificacao-neutra' };
+                
+                default:
+                    // Códigos de entrada (5x, 6x) ou outros não diretamente relacionados à cadeia de revenda.
+                    return { classification: 'Verificar CST', cssClass: 'bg-gray-200' };
+            }
+        }
+
+        /**
+         * Tenta extrair a classificação POS/NEG/NEU do início da string infAdProd.
+         * @param {string} infAdProd - O conteúdo da tag infAdProd.
+         * @returns {string | null} 'POS', 'NEG', 'NEU', ou null.
+         */
+        function getInternalClassification(infAdProd) {
+            if (!infAdProd) return null;
+            // Usa regex para encontrar (POS), (NEG) ou (NEU) no início da string
+            const match = infAdProd.trim().match(/^\((POS|NEG|NEU)\)/i);
+            if (match) {
+                return match[1].toUpperCase();
+            }
+            return null;
+        }
+
+
+        function getMeaning(code, map) {
+            return map[code] || 'Código não mapeado/inválido';
+        }
+
+        /**
+         * Lida com a seleção de múltiplos arquivos.
+         */
+        function handleFileSelect(event) {
+            const files = event.target.files;
+            
+            // Remove apenas os resultados antigos, mantendo a legenda fiscal
+            const oldNfeContainers = resultsArea.querySelectorAll('.nfeContainer');
+            oldNfeContainers.forEach(container => container.remove());
+
+            if (files.length === 0) {
+                resultsArea.innerHTML = '<p class="text-gray-600">Aguardando a seleção dos arquivos XML...</p>';
+                return;
+            }
+
+            // Exibe a mensagem de processamento apenas se não houver resultados válidos
+            if (resultsArea.querySelectorAll('.nfeContainer').length === 0) {
+                 resultsArea.innerHTML = '<p class="text-blue-500 font-semibold mb-4">Processando arquivos. Por favor, aguarde...</p>';
+            }
+
+            let filesProcessed = 0;
+            const totalFiles = files.length;
+            let foundValidNfe = false;
+
+            Array.from(files).forEach(file => {
+                const reader = new FileReader();
+
+                reader.onload = function(e) {
+                    try {
+                        const xmlString = e.target.result;
+                        if (processXml(file.name, xmlString)) {
+                            foundValidNfe = true;
+                        }
+                    } catch (error) {
+                        displayError(`Erro interno ao processar ${file.name}: ${error.message}`);
+                    } finally {
+                        filesProcessed++;
+                        if (filesProcessed === totalFiles) {
+                            // Remove o "Processando" e exibe o erro se nada foi encontrado
+                            const processingMessage = resultsArea.querySelector('.text-blue-500');
+                            if (processingMessage) processingMessage.remove();
+
+                            if (!foundValidNfe && resultsArea.querySelectorAll('.nfeContainer').length === 0) {
+                                resultsArea.innerHTML = '<p class="error text-red-600 font-semibold">Nenhuma informação válida de NF-e foi encontrada nos arquivos selecionados.</p>';
+                            }
+                        }
+                    }
+                };
+
+                reader.onerror = function() {
+                    displayError(`Erro ao ler o arquivo: ${file.name}`);
+                };
+
+                reader.readAsText(file);
+            });
+        }
+
+        /**
+         * Processa o XML, extraindo as informações da nota e dos itens.
+         * @returns {boolean} True se a NF-e foi processada com sucesso.
+         */
+        function processXml(fileName, xmlString) {
+            const xmlDoc = parser.parseFromString(xmlString, "text/xml");
+
+            if (xmlDoc.getElementsByTagName('parsererror').length > 0) {
+                displayError(`Erro de parsing XML no arquivo ${fileName}.`);
+                return false;
+            }
+            
+            const nfeElement = xmlDoc.getElementsByTagName('infNFe')[0];
+            if (!nfeElement) {
+                displayError(`Arquivo ${fileName} não parece ser uma NF-e válida (tag infNFe não encontrada).`);
+                return false;
+            }
+
+            const nNF = safeQuery(nfeElement, 'ide/nNF') || 'N/A';
+            const cnpjEmit = safeQuery(nfeElement, 'emit/CNPJ') || 'N/A';
+            const xNomeEmit = safeQuery(nfeElement, 'emit/xNome') || 'N/A';
+            
+            const detElements = xmlDoc.getElementsByTagName('det');
+            if (detElements.length === 0) {
+                 displayError(`Nota ${nNF} (${fileName}) não possui itens (<det>).`);
+                 return true; // Considera processado, mas sem itens
+            }
+
+            // Garante que a área de resultados esteja limpa da mensagem "Processando"
+            const processingMessage = resultsArea.querySelector('.text-blue-500');
+            if (processingMessage) processingMessage.remove();
+
+            const container = document.createElement('div');
+            container.className = 'nfeContainer bg-white p-6 shadow-xl rounded-xl mb-8 border-l-4 border-blue-600';
+            container.innerHTML = `
+                <div class="nfeHeader text-xl font-bold text-gray-800 mb-4">
+                    NF-e: <span class="text-blue-600">${nNF}</span> | Emitente: ${xNomeEmit} (CNPJ: ${cnpjEmit})
+                </div>
+                <div class="table-responsive">
+                    <table class="w-full text-left border border-gray-300 rounded-lg">
+                        <thead>
+                            <tr class="bg-blue-50 text-blue-700">
+                                <th class="rounded-tl-lg">Cód. Forn.</th>
+                                <th>Descrição do Produto</th>
+                                <th>Cód. Barras (EAN)</th> 
+                                <th>ICMS (CST/CSOSN)</th>
+                                <th>CST PIS</th>
+                                <th>CST COFINS</th>
+                                <th class="bg-blue-200 text-blue-800">Classificação (Fornecedor/CST)</th> <!-- Coluna Renomeada -->
+                                <th>Lote / Datas</th>
+                                <th class="price-cell">Vlr Unit. (R$)</th>
+                                <th class="rounded-tr-lg">PMP/PMC</th> 
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${Array.from(detElements).map(det => extractItemData(det)).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            resultsArea.appendChild(container);
+            return true;
+        }
+
+        /**
+         * Extrai os dados fiscais e do produto de um elemento <det>, incluindo os significados.
+         */
+        function extractItemData(detElement) {
+            // Dados do Produto
+            const cProd = safeQuery(detElement, 'prod/cProd');
+            const xProd = safeQuery(detElement, 'prod/xProd');
+            const vUnCom = formatCurrency(safeQuery(detElement, 'prod/vUnCom'));
+
+            // Dados do Código de Barras (EAN/GTIN)
+            const cEAN = safeQuery(detElement, 'prod/cEAN');
+            const cEANTrib = safeQuery(detElement, 'prod/cEANTrib');
+            // Prioriza cEAN, se for 'SEM GTIN' ou nulo, tenta cEANTrib
+            const codigoBarras = (cEAN && cEAN !== 'SEM GTIN') ? cEAN : ((cEANTrib && cEANTrib !== 'SEM GTIN') ? cEANTrib : 'N/D');
+
+            // Dados Fiscais - ICMS: Prioriza CSOSN (Simples) e fallback para CST (Normal)
+            let icmsCode = safeQuery(detElement, 'imposto/ICMS/*/CSOSN'); 
+            if (!icmsCode) {
+                icmsCode = safeQuery(detElement, 'imposto/ICMS/*/CST'); 
+            }
+            
+            // Dados Fiscais - PIS e COFINS
+            const pisCST = safeQuery(detElement, 'imposto/PIS/*/CST') || 'N/D';
+            const cofinsCST = safeQuery(detElement, 'imposto/COFINS/*/CST') || 'N/D';
+            
+            // 1. Extrai <infAdProd> (informação adicional do item)
+            const infAdProd = safeQuery(detElement, 'infAdProd'); 
+
+            // 2. Extrai o Preço Máximo ao Consumidor (vPMC)
+            const vPMCValue = safeQuery(detElement, 'prod/med/vPMC');
+            
+            // 3. Lógica de Classificação PIS/COFINS (Internal/Fiscal)
+            const internalClassificationCode = getInternalClassification(infAdProd);
+            const cstClassification = getFiscalClassification(pisCST);
+            
+            let finalClassification = {};
+
+            if (internalClassificationCode) {
+                // Prioriza a classificação interna se existir
+                let classificationText = '';
+                let cssClass = '';
+
+                switch (internalClassificationCode) {
+                    case 'POS':
+                        classificationText = `POS: Lista Positiva (Fornecedor)`;
+                        cssClass = 'classificacao-positiva';
+                        break;
+                    case 'NEG':
+                        classificationText = `NEG: Lista Negativa (Fornecedor)`;
+                        cssClass = 'classificacao-negativa';
+                        break;
+                    case 'NEU':
+                        classificationText = `NEU: Lista Neutra (Fornecedor)`;
+                        cssClass = 'classificacao-neutra';
+                        break;
+                }
+                // Adiciona o CST Calculado para comparação
+                const cstMeaningText = `${pisCST} (${getMeaning(pisCST, PIS_COFINS_MEANINGS).split('(')[1]}`;
+                finalClassification = { 
+                    classification: classificationText, 
+                    cssClass: cssClass, 
+                    calculatedCstText: `CST Fiscal: ${pisCST}`
+                };
+            } else {
+                // Se não houver classificação interna, usa a classificação puramente fiscal
+                finalClassification = { 
+                    classification: cstClassification.classification, 
+                    cssClass: cstClassification.cssClass,
+                    calculatedCstText: `CST Fiscal: ${pisCST}`
+                };
+            }
+            
+            // 4. Formata as datas (se existirem)
+            const dFab = safeQuery(detElement, 'prod/rastro/dFab') || safeQuery(detElement, 'prod/med/dFab');
+            const dVal = safeQuery(detElement, 'prod/rastro/dVal') || safeQuery(detElement, 'prod/med/dVal');
+            const nLote = safeQuery(detElement, 'prod/rastro/nLote') || safeQuery(detElement, 'prod/med/nLote');
+            const qLote = safeQuery(detElement, 'prod/rastro/qLote') || safeQuery(detElement, 'prod/med/qLote');
+
+            const dFabFormatted = formatDate(dFab);
+            const dValFormatted = formatDate(dVal);
+            
+            // --- Fim Lógica de Extração de Lote ---
+            
+            // 5. Constrói o bloco de conteúdo da coluna PMP/PMC
+            let infAdProdDisplay = [];
+            
+            if (vPMCValue) {
+                const pmcFormatted = formatCurrency(vPMCValue);
+                infAdProdDisplay.push(`
+                    <div class="pmc-highlight" title="Preço Máximo ao Consumidor (vPMC)">
+                        PMC: R$ ${pmcFormatted}
+                    </div>
+                `);
+            }
+            
+            if (infAdProd) {
+                infAdProdDisplay.push(`
+                    <div class="inf-ad-prod-highlight" title="Informação Adicional do Produto (infAdProd)">
+                        ${infAdProd}
+                    </div>
+                `);
+            }
+            
+            const pmcPmpCellContent = infAdProdDisplay.length > 0 ? infAdProdDisplay.join('') : 'N/D';
+
+
+            // Conteúdo da Coluna de Lote (apenas rastreabilidade)
+            const lotContent = `
+                ${nLote ? `Lote: ${nLote}<br>` : ''}
+                ${qLote ? `Qtde Lote: ${parseFloat(qLote).toFixed(2)}<br>` : ''}
+                ${dFabFormatted ? `Fab.: ${dFabFormatted}<br>` : ''}
+                ${dValFormatted ? `Val.: ${dValFormatted}<br>` : ''}
+                ${!nLote && !qLote && !dFabFormatted && !dValFormatted ? 'Nenhuma informação de lote.' : ''}
+            `;
+
+
+            const icmsCellContent = icmsCode ? 
+                `${icmsCode} <span class="code-meaning">(${getMeaning(icmsCode, CSOSN_MEANINGS)})</span>` : 'N/D';
+            
+            const pisCellContent = pisCST !== 'N/D' ? 
+                `${pisCST} <span class="code-meaning">(${getMeaning(pisCST, PIS_COFINS_MEANINGS)})</span>` : 'N/D';
+
+            const cofinsCellContent = cofinsCST !== 'N/D' ? 
+                `${cofinsCST} <span class="code-meaning">(${getMeaning(cofinsCST, PIS_COFINS_MEANINGS)})</span>` : 'N/D';
+
+            return `
+                <tr class="hover:bg-gray-50 border-t border-gray-100">
+                    <td>${cProd || 'N/D'}</td>
+                    <td>${xProd || 'N/D'}</td>
+                    <td>${codigoBarras}</td> 
+                    <td class="bg-yellow-50">${icmsCellContent}</td>
+                    <td>${pisCellContent}</td>
+                    <td>${cofinsCellContent}</td>
+                    <td class="${finalClassification.cssClass} text-center font-bold">
+                        ${finalClassification.classification}
+                        <span class="code-meaning mt-1 text-xs">(${finalClassification.calculatedCstText})</span>
+                    </td>
+                    <td class="lot-info">${lotContent}</td>
+                    <td class="font-semibold text-green-700 price-cell">${vUnCom}</td>
+                    <td>${pmcPmpCellContent}</td> 
+                </tr>
+            `;
+        }
+
+        /**
+         * Função auxiliar para buscar o conteúdo de uma tag de forma segura usando o wildcard (*).
+         */
+        function safeQuery(baseElement, path) {
+            const parts = path.split('/');
+            let current = baseElement;
+
+            for (const part of parts) {
+                if (!current) return null;
+
+                let nextElement;
+                if (part === '*') {
+                    // Busca o primeiro elemento filho, que geralmente é o grupo CST/CSOSN (ex: ICMS00, ICMSST)
+                    const impostoGroup = current.children; 
+                    if (impostoGroup.length > 0) {
+                        nextElement = impostoGroup[0];
+                    }
+                } else {
+                    // Usa getElementsByTagName e pega o primeiro, mais confiável
+                    nextElement = current.getElementsByTagName(part)[0];
+                }
+                current = nextElement;
+            }
+
+            return current ? current.textContent.trim() : null;
+        }
+
+        /**
+         * Formata uma data AAAA-MM-DD para DD/MM/AAAA.
+         */
+        function formatDate(dateString) {
+            if (!dateString || dateString.length !== 10) return '';
+            const [year, month, day] = dateString.split('-');
+            if (year && month && day) return `${day}/${month}/${year}`;
+            return '';
+        }
+
+        /**
+         * Formata um valor numérico para o formato de moeda brasileira (R$).
+         */
+        function formatCurrency(value) {
+            const num = parseFloat(value);
+            if (isNaN(num)) return 'N/D';
+            return num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        /**
+         * Exibe uma mensagem de erro na área de resultados.
+         */
+        function displayError(message) {
+            const p = document.createElement('p');
+            p.className = 'error p-2 mt-2 bg-red-100 border border-red-400 text-red-700 rounded';
+            p.textContent = message;
+            resultsArea.appendChild(p);
+        }
+
+    </script>
+</body>
+</html>
