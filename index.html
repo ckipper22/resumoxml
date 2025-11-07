@@ -1,317 +1,315 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Processador de XMLs + Envio Manual para Planilha</title>fenviarto
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f7fafc; color: #1a202c; }
-        .table-container { position: relative; max-height: 75vh; overflow: auto; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border-radius: 0.75rem; }
-        table { width: 100%; border-collapse: collapse; min-width: 1600px; }
-        th, td { padding: 12px 10px; font-size: 0.8rem; vertical-align: middle; border-bottom: 1px solid #e2e8f0; }
-        thead th { position: sticky; top: 0; z-index: 20; background-color: #2b6cb0; color: #ffffff; font-weight: 700; cursor: pointer; user-select: none; }
-        thead th:hover { background-color: #1e40af; }
-        tbody tr:nth-child(even) { background-color: #f8fafc; }
-        .code-meaning { display: block; font-size: 0.7rem; color: #4a5568; margin-top: 3px; }
-        .lot-info { font-size: 0.75rem; color: #2b6cb0; font-weight: 500; }
-        .price-cell { text-align: right; font-weight: 700; }
-        .classificacao-positiva { background-color: #ecfdf5; color: #059669; font-weight: 600; border-left: 4px solid #10b981; }
-        .classificacao-negativa { background-color: #fff7ed; color: #d97706; font-weight: 600; border-left: 4px solid #f59e0b; }
-        .classificacao-neutra { background-color: #eff6ff; color: #3b82f6; font-weight: 600; border-left: 4px solid #60a5fa; }
-        .inf-ad-prod-highlight, .pmc-highlight { padding: 3px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; margin-top: 3px; }
-        .inf-ad-prod-highlight { background-color: #f0f9ff; color: #1e40af; border: 1px solid #bae6fd; }
-        .pmc-highlight { background-color: #fefce8; color: #a16207; border: 1px solid #fcd34d; }
-        .nfeHeaderRow td { background-color: #e0e7ff !important; font-weight: 700; font-size: 0.95rem; color: #1e40af; border-top: 3px solid #93c5fd; position: sticky; top: 48px; z-index: 15; }
-        #dropArea { border: 3px dashed #93c5fd; background-color: #f0f9ff; transition: all 0.2s ease; }
-        .drag-over { border-color: #3b82f6 !important; background-color: #e0f2fe !important; box-shadow: 0 0 10px rgba(59, 130, 246, 0.5); }
-        @media (max-width: 1600px) { .table-container { overflow-x: auto; } }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Processador de XMLs + Envio Manual para Planilha</title>
+
+  <!-- TAILWIND CSS COMPILADO (PRODUÇÃO) -->
+  <link href="./styles/output.css" rel="stylesheet" />
+
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #f7fafc; color: #1a202c; }
+    .table-container { position: relative; max-height: 75vh; overflow: auto; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border-radius: 0.75rem; }
+    table { width: 100%; border-collapse: collapse; min-width: 1600px; }
+    th, td { padding: 12px 10px; font-size: 0.8rem; vertical-align: middle; border-bottom: 1px solid #e2e8f0; }
+    thead th { position: sticky; top: 0; z-index: 20; background-color: #2b6cb0; color: #ffffff; font-weight: 700; cursor: pointer; user-select: none; }
+    thead th:hover { background-color: #1e40af; }
+    tbody tr:nth-child(even) { background-color: #f8fafc; }
+    .code-meaning { display: block; font-size: 0.7rem; color: #4a5568; margin-top: 3px; }
+    .lot-info { font-size: 0.75rem; color: #2b6cb0; font-weight: 500; }
+    .price-cell { text-align: right; font-weight: 700; }
+    .classificacao-positiva { background-color: #ecfdf5; color: #059669; font-weight: 600; border-left: 4px solid #10b981; }
+    .classificacao-negativa { background-color: #fff7ed; color: #d97706; font-weight: 600; border-left: 4px solid #f59e0b; }
+    .classificacao-neutra { background-color: #eff6ff; color: #3b82f6; font-weight: 600; border-left: 4px solid #60a5fa; }
+    .inf-ad-prod-highlight, .pmc-highlight { padding: 3px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; margin-top: 3px; }
+    .inf-ad-prod-highlight { background-color: #f0f9ff; color: #1e40af; border: 1px solid #bae6fd; }
+    .pmc-highlight { background-color: #fefce8; color: #a16207; border: 1px solid #fcd34d; }
+    .nfeHeaderRow td { background-color: #e0e7ff !important; font-weight: 700; font-size: 0.95rem; color: #1e40af; border-top: 3px solid #93c5fd; position: sticky; top: 48px; z-index: 15; }
+    #dropArea { border: 3px dashed #93c5fd; background-color: #f0f9ff; transition: all 0.2s ease; }
+    .drag-over { border-color: #3b82f6 !important; background-color: #e0f2fe !important; box-shadow: 0 0 10px rgba(59, 130, 246, 0.5); }
+    @media (max-width: 1600px) { .table-container { overflow-x: auto; } }
+  </style>
 </head>
 <body class="p-4 sm:p-8">
 
-    <h1 class="text-3xl font-extrabold text-gray-800 border-b-4 border-blue-500 pb-2 mb-6 rounded-md flex items-center">
-        Processador de XMLs + Envio Manual para Planilha
-        <span id="loadingSpinner" class="hidden ml-3">
-            <svg class="animate-spin h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+  <h1 class="text-3xl font-extrabold text-gray-800 border-b-4 border-blue-500 pb-2 mb-6 rounded-md flex items-center">
+    Processador de XMLs + Envio Manual para Planilha
+    <span id="loadingSpinner" class="hidden ml-3">
+      <svg class="animate-spin h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+    </span>
+  </h1>
+
+  <div class="flex flex-col lg:flex-row gap-6 mb-8">
+    <div id="dropArea" class="p-6 shadow-xl rounded-xl border-2 lg:w-1/3 flex flex-col justify-center items-center cursor-pointer hover:border-blue-500 transition-colors">
+      <label for="xmlInput" class="block text-xl font-bold text-gray-700 mb-2">Arraste e Solte XML(s) Aqui</label>
+      <p class="text-sm text-gray-500 mb-4">ou clique para selecionar os arquivos (.xml)</p>
+      <input type="file" id="xmlInput" multiple accept=".xml" class="opacity-0 w-0 h-0 absolute pointer-events-none">
+      <button onclick="document.getElementById('xmlInput').click()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg shadow-md">
+        Selecionar Arquivos
+      </button>
+    </div>
+
+    <div class="bg-white p-6 shadow-xl rounded-xl border border-gray-200 flex-1 flex flex-col gap-4">
+      <h2 class="text-xl font-semibold text-gray-800 border-b pb-2">Filtros e Ações</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label for="textFilter" class="block text-sm font-medium text-gray-600 mb-1">Buscar Produto/EAN:</label>
+          <input type="text" id="textFilter" placeholder="Descrição, EAN, Cód. Forn. ou NF-e" class="w-full border border-gray-300 p-2 rounded-lg focus:ring-blue-500">
+        </div>
+        <div>
+          <label for="classificationFilter" class="block text-sm font-medium text-gray-600 mb-1">Filtrar Classificação:</label>
+          <select id="classificationFilter" class="w-full border border-gray-300 p-2 rounded-lg focus:ring-blue-500 bg-white">
+            <option value="">Todas as Classificações</option>
+            <option value="classificacao-positiva">Lista Positiva</option>
+            <option value="classificacao-negativa">Lista Negativa</option>
+            <option value="classificacao-neutra">Lista Neutra</option>
+            <option value="bg-gray-200">Outras / Verificar</option>
+          </select>
+        </div>
+        <div class="flex gap-2">
+          <button id="exportButton" class="flex-1 py-2 px-4 rounded-lg shadow-md text-sm font-medium text-white bg-green-600 hover:bg-green-700" disabled>
+            Exportar Tabela (.csv)
+          </button>
+          <button id="sendDuplicatasButton" class="flex-1 py-2 px-4 rounded-lg shadow-md text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 flex items-center justify-center" disabled>
+            Enviar Duplicatas
+            <svg id="sendSpinner" class="hidden animate-spin ml-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
-        </span>
-    </h1>
-
-    <div class="flex flex-col lg:flex-row gap-6 mb-8">
-        <div id="dropArea" class="p-6 shadow-xl rounded-xl border-2 lg:w-1/3 flex flex-col justify-center items-center cursor-pointer hover:border-blue-500 transition-colors">
-            <label for="xmlInput" class="block text-xl font-bold text-gray-700 mb-2">Arraste e Solte XML(s) Aqui</label>
-            <p class="text-sm text-gray-500 mb-4">ou clique para selecionar os arquivos (.xml)</p>
-            <input type="file" id="xmlInput" multiple accept=".xml" class="opacity-0 w-0 h-0 absolute pointer-events-none">
-            <button onclick="document.getElementById('xmlInput').click()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg shadow-md">
-                Selecionar Arquivos
-            </button>
+          </button>
         </div>
-
-        <div class="bg-white p-6 shadow-xl rounded-xl border border-gray-200 flex-1 flex flex-col gap-4">
-            <h2 class="text-xl font-semibold text-gray-800 border-b pb-2">Filtros e Ações</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                    <label for="textFilter" class="block text-sm font-medium text-gray-600 mb-1">Buscar Produto/EAN:</label>
-                    <input type="text" id="textFilter" placeholder="Descrição, EAN, Cód. Forn. ou NF-e" class="w-full border border-gray-300 p-2 rounded-lg focus:ring-blue-500">
-                </div>
-                <div>
-                    <label for="classificationFilter" class="block text-sm font-medium text-gray-600 mb-1">Filtrar Classificação:</label>
-                    <select id="classificationFilter" class="w-full border border-gray-300 p-2 rounded-lg focus:ring-blue-500 bg-white">
-                        <option value="">Todas as Classificações</option>
-                        <option value="classificacao-positiva">Lista Positiva</option>
-                        <option value="classificacao-negativa">Lista Negativa</option>
-                        <option value="classificacao-neutra">Lista Neutra</option>
-                        <option value="bg-gray-200">Outras / Verificar</option>
-                    </select>
-                </div>
-                <div class="flex gap-2">
-                    <button id="exportButton" class="flex-1 py-2 px-4 rounded-lg shadow-md text-sm font-medium text-white bg-green-600 hover:bg-green-700" disabled>
-                        Exportar Tabela (.csv)
-                    </button>
-                    <button id="sendDuplicatasButton" class="flex-1 py-2 px-4 rounded-lg shadow-md text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 flex items-center justify-center" disabled>
-                        Enviar Duplicatas
-                        <svg id="sendSpinner" class="hidden animate-spin ml-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                    </button>
-                </div>
-            </div>
-        </div>
+      </div>
     </div>
+  </div>
 
-    <div id="fiscalLegend" class="bg-indigo-50 p-5 shadow-inner rounded-xl mb-8 border-l-4 border-indigo-400">
-        <h2 class="text-xl font-semibold text-indigo-800 mb-3">Contexto Fiscal e Legenda</h2>
-        <div class="flex flex-wrap gap-x-6 text-sm text-gray-700">
-            <div class="flex items-center"><span class="h-3 w-3 bg-green-400 rounded-full mr-2"></span> <strong>Positiva:</strong> Isento/Alíquota Zero.</div>
-            <div class="flex items-center"><span class="h-3 w-3 bg-yellow-600 rounded-full mr-2"></span> <strong>Negativa:</strong> Revenda Alíquota Zero (CST 04).</div>
-            <div class="flex items-center"><span class="h-3 w-3 bg-blue-400 rounded-full mr-2"></span> <strong>Neutra:</strong> Crédito/Débito.</div>
-        </div>
+  <div id="fiscalLegend" class="bg-indigo-50 p-5 shadow-inner rounded-xl mb-8 border-l-4 border-indigo-400">
+    <h2 class="text-xl font-semibold text-indigo-800 mb-3">Contexto Fiscal e Legenda</h2>
+    <div class="flex flex-wrap gap-x-6 text-sm text-gray-700">
+      <div class="flex items-center"><span class="h-3 w-3 bg-green-400 rounded-full mr-2"></span> <strong>Positiva:</strong> Isento/Alíquota Zero.</div>
+      <div class="flex items-center"><span class="h-3 w-3 bg-yellow-600 rounded-full mr-2"></span> <strong>Negativa:</strong> Revenda Alíquota Zero (CST 04).</div>
+      <div class="flex items-center"><span class="h-3 w-3 bg-blue-400 rounded-full mr-2"></span> <strong>Neutra:</strong> Crédito/Débito.</div>
     </div>
+  </div>
 
-    <div id="messageArea" class="mb-6"></div>
-    <div id="resultsArea">
-        <p class="text-gray-600 text-center py-8">Aguardando XMLs...</p>
+  <div id="messageArea" class="mb-6"></div>
+  <div id="resultsArea">
+    <p class="text-gray-600 text-center py-8">Aguardando XMLs...</p>
+  </div>
+
+  <div id="paginationArea" class="mt-4 flex justify-between items-center hidden">
+    <p id="paginationSummary" class="text-sm text-gray-700"></p>
+    <div class="flex space-x-2">
+      <button id="prevPage" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50" disabled>Anterior</button>
+      <button id="nextPage" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50" disabled>Próxima</button>
     </div>
+  </div>
 
-    <div id="paginationArea" class="mt-4 flex justify-between items-center hidden">
-        <p id="paginationSummary" class="text-sm text-gray-700"></p>
-        <div class="flex space-x-2">
-            <button id="prevPage" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50" disabled>Anterior</button>
-            <button id="nextPage" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50" disabled>Próxima</button>
-        </div>
-    </div>
+  <script>
+    // === CONFIGURAÇÃO ===
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzbeawKlm7s0Dl8ok-2AXUepTb0JG_2a7F1qQ3OLZw-mHIMVbgMq3dpXp1E8jwQ7-glCQ/exec';
 
-    <script>
-        // === CONFIGURAÇÃO ===
-      const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzbeawKlm7s0Dl8ok-2AXUepTb0JG_2a7F1qQ3OLZw-mHIMVbgMq3dpXp1E8jwQ7-glCQ/exec';
+    // === DOM ===
+    const xmlInput = document.getElementById('xmlInput');
+    const textFilter = document.getElementById('textFilter');
+    const classificationFilter = document.getElementById('classificationFilter');
+    const exportButton = document.getElementById('exportButton');
+    const sendDuplicatasButton = document.getElementById('sendDuplicatasButton');
+    const sendSpinner = document.getElementById('sendSpinner');
+    const resultsArea = document.getElementById('resultsArea');
+    const messageArea = document.getElementById('messageArea');
+    const dropArea = document.getElementById('dropArea');
+    const loadingSpinner = document.getElementById('loadingSpinner');
+    const paginationArea = document.getElementById('paginationArea');
+    const paginationSummary = document.getElementById('paginationSummary');
+    const prevPageButton = document.getElementById('prevPage');
+    const nextPageButton = document.getElementById('nextPage');
 
-        // === DOM ===
-        const xmlInput = document.getElementById('xmlInput');
-        const textFilter = document.getElementById('textFilter');
-        const classificationFilter = document.getElementById('classificationFilter');
-        const exportButton = document.getElementById('exportButton');
-        const sendDuplicatasButton = document.getElementById('sendDuplicatasButton');
-        const sendSpinner = document.getElementById('sendSpinner');
-        const resultsArea = document.getElementById('resultsArea');
-        const messageArea = document.getElementById('messageArea');
-        const dropArea = document.getElementById('dropArea');
-        const loadingSpinner = document.getElementById('loadingSpinner');
-        const paginationArea = document.getElementById('paginationArea');
-        const paginationSummary = document.getElementById('paginationSummary');
-        const prevPageButton = document.getElementById('prevPage');
-        const nextPageButton = document.getElementById('nextPage');
+    // === ESTADO ===
+    const parser = new DOMParser();
+    let allProductsData = [];
+    let filteredProductsData = [];
+    let currentPage = 1;
+    const itemsPerPage = 15;
+    let currentSort = { column: 'xProd', direction: 'asc' };
+    let duplicatasParaEnviar = [];
 
-        // === ESTADO ===
-        const parser = new DOMParser();
-        let allProductsData = [];
-        let filteredProductsData = [];
-        let currentPage = 1;
-        const itemsPerPage = 15;
-        let currentSort = { column: 'xProd', direction: 'asc' };
-        let duplicatasParaEnviar = [];
+    // === MAPEAMENTOS FISCAIS ===
+    const CSOSN_MEANINGS = { '00': 'Tributada integralmente', '40': 'Isenta', '41': 'Não tributada', '101': 'Tributada SN com crédito', '102': 'Tributada SN sem crédito', '300': 'Imune', '400': 'Não tributada', '500': 'ST anterior', '900': 'Outros' };
+    const PIS_COFINS_MEANINGS = { '01': 'Tributável Básica', '04': 'Monofásica – Revenda Zero', '06': 'Alíquota Zero', '07': 'Isenta', '08': 'Sem Incidência', '09': 'Suspensa' };
 
-        // === MAPEAMENTOS FISCAIS ===
-        const CSOSN_MEANINGS = { '00': 'Tributada integralmente', '40': 'Isenta', '41': 'Não tributada', '101': 'Tributada SN com crédito', '102': 'Tributada SN sem crédito', '300': 'Imune', '400': 'Não tributada', '500': 'ST anterior', '900': 'Outros' };
-        const PIS_COFINS_MEANINGS = { '01': 'Tributável Básica', '04': 'Monofásica – Revenda Zero', '06': 'Alíquota Zero', '07': 'Isenta', '08': 'Sem Incidência', '09': 'Suspensa' };
-
-        // === FUNÇÕES ===
-        function displayMessage(type, text) {
-            const colors = { success: 'bg-green-100 text-green-800', error: 'bg-red-100 text-red-800', warning: 'bg-yellow-100 text-yellow-800', info: 'bg-blue-100 text-blue-800' };
-            messageArea.innerHTML += `<div class="flex items-center p-3 mb-2 rounded-lg ${colors[type]} border border-${type}-300"><span class="mr-2">${type === 'success' ? 'CheckCircle' : type === 'error' ? 'XCircle' : 'AlertTriangle'}</span> ${text}</div>`;
-            messageArea.scrollTop = messageArea.scrollHeight;
-        }
-
-        // === COLETAR DUPLICATAS ===
-        function coletarDuplicatasDosXMLs() {
-            duplicatasParaEnviar = [];
-            const files = Array.from(xmlInput.files).filter(f => f.name.endsWith('.xml'));
-            if (files.length === 0) return displayMessage('warning', 'Nenhum XML carregado.');
-
-            let processed = 0;
-            sendDuplicatasButton.disabled = true;
-            sendSpinner.classList.remove('hidden');
-            displayMessage('info', `Coletando duplicatas de ${files.length} XML(s)...`);
-
-            files.forEach(file => {
-                const reader = new FileReader();
-                reader.onload = e => {
-                    const xmlDoc = parser.parseFromString(e.target.result, 'application/xml');
-                    const infNFe = xmlDoc.querySelector('infNFe');
-                    if (!infNFe) { processed++; return; }
-
-                    const fornecedor = infNFe.querySelector('emit xNome')?.textContent?.trim() || 'N/D';
-                    const numero = infNFe.querySelector('ide nNF')?.textContent || 'N/D';
-                    const dataNota = (infNFe.querySelector('ide dhEmi')?.textContent || '').split('T')[0];
-                    const valorNota = infNFe.querySelector('total ICMSTot vNF')?.textContent || '0.00';
-
-                    xmlDoc.querySelectorAll('cobr dup').forEach(dup => {
-                        const dVenc = (dup.querySelector('dVenc')?.textContent || '').split('T')[0];
-                        const vDup = dup.querySelector('vDup')?.textContent || '0.00';
-                        duplicatasParaEnviar.push({ fornecedor, numero, dataNota, valorNota, dVenc, vDup });
-                    });
-
-                    processed++;
-                    if (processed === files.length) {
-                        sendDuplicatasButton.disabled = false;
-                        sendSpinner.classList.add('hidden');
-                        displayMessage('success', `${duplicatasParaEnviar.length} duplicata(s) prontas. Clique em "Enviar Duplicatas".`);
-                    }
-                };
-                reader.readAsText(file);
-            });
-        }
-
-        // === ENVIAR DUPLICATAS ===
-        async function enviarTodasDuplicatas() {
-  if (duplicatasParaEnviar.length === 0) return displayMessage('error', 'Nenhuma duplicata para enviar.');
-
-  sendDuplicatasButton.disabled = true;
-  sendSpinner.classList.remove('hidden');
-  let success = 0, error = 0;
-
-  for (const dup of duplicatasParaEnviar) {
-    try {
-      // PROXY CORS GRÁTIS - RESOLVE 100%
-      const PROXY_URL = 'https://api.allorigins.win/raw?url=';
-      const fullUrl = encodeURIComponent(WEB_APP_URL);
-      
-      const res = await fetch(PROXY_URL + fullUrl, { 
-        method: 'POST', 
-        headers: { 'Content-Type': 'application/json' }, 
-        body: JSON.stringify(dup) 
-      });
-      
-      const data = await res.json();
-      data.success ? success++ : (error++, displayMessage('error', `NF ${dup.numero}: ${data.error}`));
-    } catch (e) {
-      error++; displayMessage('error', `NF ${dup.numero}: Falha na conexão`);
+    // === FUNÇÕES ===
+    function displayMessage(type, text) {
+      const colors = { success: 'bg-green-100 text-green-800', error: 'bg-red-100 text-red-800', warning: 'bg-yellow-100 text-yellow-800', info: 'bg-blue-100 text-blue-800' };
+      messageArea.innerHTML += `<div class="flex items-center p-3 mb-2 rounded-lg ${colors[type]} border border-${type}-300"><span class="mr-2">${type === 'success' ? 'CheckCircle' : type === 'error' ? 'XCircle' : 'AlertTriangle'}</span> ${text}</div>`;
+      messageArea.scrollTop = messageArea.scrollHeight;
     }
-  }
 
-  sendDuplicatasButton.disabled = false;
-  sendSpinner.classList.add('hidden');
-  displayMessage('success', `${success} enviada(s), ${error} falha(s).`);
-  duplicatasParaEnviar = [];
-}
+    // === COLETAR DUPLICATAS ===
+    function coletarDuplicatasDosXMLs() {
+      duplicatasParaEnviar = [];
+      const files = Array.from(xmlInput.files).filter(f => f.name.endsWith('.xml'));
+      if (files.length === 0) return displayMessage('warning', 'Nenhum XML carregado.');
 
+      let processed = 0;
+      sendDuplicatasButton.disabled = true;
+      sendSpinner.classList.remove('hidden');
+      displayMessage('info', `Coletando duplicatas de ${files.length} XML(s)...`);
+
+      files.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = e => {
+          const xmlDoc = parser.parseFromString(e.target.result, 'application/xml');
+          const infNFe = xmlDoc.querySelector('infNFe');
+          if (!infNFe) { processed++; return; }
+
+          const fornecedor = infNFe.querySelector('emit xNome')?.textContent?.trim() || 'N/D';
+          const numero = infNFe.querySelector('ide nNF')?.textContent || 'N/D';
+          const dataNota = (infNFe.querySelector('ide dhEmi')?.textContent || '').split('T')[0];
+          const valorNota = infNFe.querySelector('total ICMSTot vNF')?.textContent || '0.00';
+
+          xmlDoc.querySelectorAll('cobr dup').forEach(dup => {
+            const dVenc = (dup.querySelector('dVenc')?.textContent || '').split('T')[0];
+            const vDup = dup.querySelector('vDup')?.textContent || '0.00';
+            duplicatasParaEnviar.push({ fornecedor, numero, dataNota, valorNota, dVenc, vDup });
+          });
+
+          processed++;
+          if (processed === files.length) {
             sendDuplicatasButton.disabled = false;
             sendSpinner.classList.add('hidden');
-            displayMessage('success', `${success} enviada(s), ${error} falha(s).`);
-            duplicatasParaEnviar = [];
+            displayMessage('success', `${duplicatasParaEnviar.length} duplicata(s) prontas. Clique em "Enviar Duplicatas".`);
+          }
+        };
+        reader.readAsText(file);
+      });
+    }
+
+    // === ENVIAR DUPLICATAS (COM PROXY CORS) ===
+    async function enviarTodasDuplicatas() {
+      if (duplicatasParaEnviar.length === 0) return displayMessage('error', 'Nenhuma duplicata para enviar.');
+
+      sendDuplicatasButton.disabled = true;
+      sendSpinner.classList.remove('hidden');
+      let success = 0, error = 0;
+
+      for (const dup of duplicatasParaEnviar) {
+        try {
+          const PROXY_URL = 'https://api.allorigins.win/raw?url=';
+          const fullUrl = PROXY_URL + encodeURIComponent(WEB_APP_URL);
+          
+          const res = await fetch(fullUrl, { 
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' }, 
+            body: JSON.stringify(dup) 
+          });
+          
+          const data = await res.json();
+          data.success ? success++ : (error++, displayMessage('error', `NF ${dup.numero}: ${data.error || 'Erro desconhecido'}`));
+        } catch (e) {
+          error++; displayMessage('error', `NF ${dup.numero}: Falha na conexão`);
+        }
+      }
+
+      sendDuplicatasButton.disabled = false;
+      sendSpinner.classList.add('hidden');
+      displayMessage('success', `${success} enviada(s), ${error} falha(s).`);
+      duplicatasParaEnviar = [];
+    }
+
+    // === PROCESSAR XML (PRODUTOS) ===
+    function processXML(xmlContent, fileName) {
+      const xmlDoc = parser.parseFromString(xmlContent, 'application/xml');
+      if (xmlDoc.querySelector('parsererror')) return displayMessage('error', `XML inválido: ${fileName}`), [];
+
+      const products = [];
+      xmlDoc.querySelectorAll('det').forEach(det => {
+        const prod = det.querySelector('prod');
+        if (!prod) return;
+
+        const item = {
+          cProd: prod.querySelector('cProd')?.textContent || 'N/D',
+          xProd: prod.querySelector('xProd')?.textContent || 'N/D',
+          codigoBarras: prod.querySelector('cEAN')?.textContent || 'N/D',
+          vUnCom: prod.querySelector('vUnCom')?.textContent || '0.00',
+          vUnComFormatted: parseFloat(prod.querySelector('vUnCom')?.textContent || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+          nLote: prod.querySelector('nLote')?.textContent || '',
+          qLote: prod.querySelector('qLote')?.textContent || '',
+          dFabFormatted: (prod.querySelector('dFab')?.textContent || '').split('T')[0] || '',
+          dValFormatted: (prod.querySelector('dVal')?.textContent || '').split('T')[0] || '',
+          infAdProd: prod.querySelector('infAdProd')?.textContent || '',
+          vPMCValue: prod.querySelector('vPMC')?.textContent || '',
+          pmcFormatted: prod.querySelector('vPMC')?.textContent ? parseFloat(prod.querySelector('vPMC')?.textContent).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '',
+          icmsCode: (det.querySelector('ICMS CST, ICMS CSOSN')?.getAttribute('CST') || det.querySelector('ICMS CST, ICMS CSOSN')?.getAttribute('CSOSN') || 'N/D'),
+          icmsMeaning: CSOSN_MEANINGS[det.querySelector('ICMS CST, ICMS CSOSN')?.getAttribute('CST') || det.querySelector('ICMS CST, ICMS CSOSN')?.getAttribute('CSOSN') || 'N/D'] || 'Não mapeado',
+          pisCST: det.querySelector('PIS CST')?.getAttribute('CST') || 'N/D',
+          cofinsCST: det.querySelector('COFINS CST')?.getAttribute('CST') || 'N/D',
+          pisMeaning: PIS_COFINS_MEANINGS[det.querySelector('PIS CST')?.getAttribute('CST') || 'N/D'] || 'Não mapeado',
+          nNF: xmlDoc.querySelector('ide nNF')?.textContent || 'N/D',
+          xNomeEmit: xmlDoc.querySelector('emit xNome')?.textContent || 'N/D',
+          cnpjEmit: xmlDoc.querySelector('emit CNPJ')?.textContent || 'N/D',
+          finalClassification: { classification: 'Outras / Verificar', cssClass: 'bg-gray-200', calculatedCstText: '' }
+        };
+
+        if (['06','07','08','09'].includes(item.pisCST)) {
+          item.finalClassification = { classification: 'Lista Positiva', cssClass: 'classificacao-positiva', calculatedCstText: 'Isento/Alíquota Zero' };
+        } else if (item.pisCST === '04') {
+          item.finalClassification = { classification: 'Lista Negativa', cssClass: 'classificacao-negativa', calculatedCstText: 'Revenda Alíquota Zero' };
+        } else if (['01','02','03','49'].includes(item.pisCST)) {
+          item.finalClassification = { classification: 'Lista Neutra', cssClass: 'classificacao-neutra', calculatedCstText: 'Crédito/Débito' };
         }
 
-        // === PROCESSAR XML (PRODUTOS) ===
-        function processXML(xmlContent, fileName) {
-            const xmlDoc = parser.parseFromString(xmlContent, 'application/xml');
-            if (xmlDoc.querySelector('parsererror')) return displayMessage('error', `XML inválido: ${fileName}`), [];
+        products.push(item);
+      });
 
-            const products = [];
-            xmlDoc.querySelectorAll('det').forEach(det => {
-                const prod = det.querySelector('prod');
-                if (!prod) return;
+      return products;
+    }
 
-                const item = {
-                    cProd: prod.querySelector('cProd')?.textContent || 'N/D',
-                    xProd: prod.querySelector('xProd')?.textContent || 'N/D',
-                    codigoBarras: prod.querySelector('cEAN')?.textContent || 'N/D',
-                    vUnCom: prod.querySelector('vUnCom')?.textContent || '0.00',
-                    vUnComFormatted: parseFloat(prod.querySelector('vUnCom')?.textContent || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
-                    nLote: prod.querySelector('nLote')?.textContent || '',
-                    qLote: prod.querySelector('qLote')?.textContent || '',
-                    dFabFormatted: (prod.querySelector('dFab')?.textContent || '').split('T')[0] || '',
-                    dValFormatted: (prod.querySelector('dVal')?.textContent || '').split('T')[0] || '',
-                    infAdProd: prod.querySelector('infAdProd')?.textContent || '',
-                    vPMCValue: prod.querySelector('vPMC')?.textContent || '',
-                    pmcFormatted: prod.querySelector('vPMC')?.textContent ? parseFloat(prod.querySelector('vPMC')?.textContent).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '',
-                    icmsCode: (det.querySelector('ICMS CST, ICMS CSOSN')?.getAttribute('CST') || det.querySelector('ICMS CST, ICMS CSOSN')?.getAttribute('CSOSN') || 'N/D'),
-                    icmsMeaning: CSOSN_MEANINGS[det.querySelector('ICMS CST, ICMS CSOSN')?.getAttribute('CST') || det.querySelector('ICMS CST, ICMS CSOSN')?.getAttribute('CSOSN') || 'N/D'] || 'Não mapeado',
-                    pisCST: det.querySelector('PIS CST')?.getAttribute('CST') || 'N/D',
-                    cofinsCST: det.querySelector('COFINS CST')?.getAttribute('CST') || 'N/D',
-                    pisMeaning: PIS_COFINS_MEANINGS[det.querySelector('PIS CST')?.getAttribute('CST') || 'N/D'] || 'Não mapeado',
-                    nNF: xmlDoc.querySelector('ide nNF')?.textContent || 'N/D',
-                    xNomeEmit: xmlDoc.querySelector('emit xNome')?.textContent || 'N/D',
-                    cnpjEmit: xmlDoc.querySelector('emit CNPJ')?.textContent || 'N/D',
-                    finalClassification: { classification: 'Outras / Verificar', cssClass: 'bg-gray-200', calculatedCstText: '' }
-                };
+    // === MANIPULAÇÃO DE ARQUIVOS ===
+    function handleFileSelect(files) {
+      if (!files.length) return;
+      allProductsData = [];
+      let processed = 0;
+      loadingSpinner.classList.remove('hidden');
+      messageArea.innerHTML = '';
 
-                if (['06','07','08','09'].includes(item.pisCST)) {
-                    item.finalClassification = { classification: 'Lista Positiva', cssClass: 'classificacao-positiva', calculatedCstText: 'Isento/Alíquota Zero' };
-                } else if (item.pisCST === '04') {
-                    item.finalClassification = { classification: 'Lista Negativa', cssClass: 'classificacao-negativa', calculatedCstText: 'Revenda Alíquota Zero' };
-                } else if (['01','02','03','49'].includes(item.pisCST)) {
-                    item.finalClassification = { classification: 'Lista Neutra', cssClass: 'classificacao-neutra', calculatedCstText: 'Crédito/Débito' };
-                }
+      Array.from(files).forEach(file => {
+        if (!file.name.endsWith('.xml')) { processed++; return displayMessage('error', `Ignorado: ${file.name}`); }
+        const reader = new FileReader();
+        reader.onload = e => {
+          allProductsData = allProductsData.concat(processXML(e.target.result, file.name));
+          processed++;
+          if (processed === files.length) {
+            loadingSpinner.classList.add('hidden');
+            displayMessage('success', `${allProductsData.length} produtos carregados.`);
+            updateView();
+            exportButton.disabled = false;
+            coletarDuplicatasDosXMLs();
+          }
+        };
+        reader.readAsText(file);
+      });
+    }
 
-                products.push(item);
-            });
+    // === FILTROS, ORDENAÇÃO, TABELA, PAGINAÇÃO, EXPORTAÇÃO (mantido igual) ===
+    function updateView() {
+      // Implementação completa de filtro, ordenação, tabela e paginação
+      // (Omitida aqui por brevidade — use a versão anterior que já funcionava)
+      // Inclua aqui o código de renderização da tabela, filtros, exportação CSV, etc.
+    }
 
-            return products;
-        }
+    // === EVENTOS ===
+    xmlInput.addEventListener('change', e => handleFileSelect(e.target.files));
+    sendDuplicatasButton.addEventListener('click', enviarTodasDuplicatas);
 
-        // === MANIPULAÇÃO DE ARQUIVOS ===
-        function handleFileSelect(files) {
-            if (!files.length) return;
-            allProductsData = [];
-            let processed = 0;
-            loadingSpinner.classList.remove('hidden');
-            messageArea.innerHTML = '';
-
-            Array.from(files).forEach(file => {
-                if (!file.name.endsWith('.xml')) { processed++; return displayMessage('error', `Ignorado: ${file.name}`); }
-                const reader = new FileReader();
-                reader.onload = e => {
-                    allProductsData = allProductsData.concat(processXML(e.target.result, file.name));
-                    processed++;
-                    if (processed === files.length) {
-                        loadingSpinner.classList.add('hidden');
-                        displayMessage('success', `${allProductsData.length} produtos carregados.`);
-                        updateView();
-                        exportButton.disabled = false;
-                        coletarDuplicatasDosXMLs();
-                    }
-                };
-                reader.readAsText(file);
-            });
-        }
-
-        // === FILTROS E RENDERIZAÇÃO (mantido igual ao anterior) ===
-        function updateView() { /* ... mesmo código de filtro, ordenação, tabela ... */ }
-        // (Código completo de renderização, paginação, exportação, etc. — igual ao anterior)
-
-        // === EVENTOS ===
-        xmlInput.addEventListener('change', e => handleFileSelect(e.target.files));
-        sendDuplicatasButton.addEventListener('click', enviarTodasDuplicatas);
-        // Drag & Drop
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(ev => dropArea.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); }));
-        ['dragenter', 'dragover'].forEach(ev => dropArea.addEventListener(ev, () => dropArea.classList.add('drag-over')));
-        ['dragleave', 'drop'].forEach(ev => dropArea.addEventListener(ev, () => dropArea.classList.remove('drag-over')));
-        dropArea.addEventListener('drop', e => handleFileSelect(e.dataTransfer.files));
-    </script>
+    // Drag & Drop
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(ev => dropArea.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); }));
+    ['dragenter', 'dragover'].forEach(ev => dropArea.addEventListener(ev, () => dropArea.classList.add('drag-over')));
+    ['dragleave', 'drop'].forEach(ev => dropArea.addEventListener(ev, () => dropArea.classList.remove('drag-over')));
+    dropArea.addEventListener('drop', e => handleFileSelect(e.dataTransfer.files));
+  </script>
 </body>
 </html>
-
-
