@@ -2,227 +2,495 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Analisador Completo de NF-e (XML)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Processador de XMLs para Cadastro de Produtos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; padding: 20px; background-color: #f4f4f4; color: #333; }
-        .container { max-width: 1200px; margin: 0 auto; background-color: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        h1, h2, h3 { color: #1a1a1a; }
-        #drop-area { border: 3px dashed #ccc; border-radius: 10px; padding: 40px 20px; text-align: center; margin-bottom: 20px; background-color: #fafafa; cursor: pointer; transition: background-color 0.2s, border-color 0.2s; }
-        #drop-area.drag-over { background-color: #e9f5ff; border-color: #007bff; }
-        #file-list { list-style-type: none; padding: 0; margin-top: 15px; }
-        #file-list li { background-color: #f0f0f0; padding: 8px 12px; margin-bottom: 5px; border-radius: 5px; font-size: 14px; }
-        #message-area { padding: 12px 15px; margin-bottom: 20px; border-radius: 5px; display: none; font-weight: 500; }
-        .message-success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-        .message-error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-        .message-warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
-        .nfe-card { border: 1px solid #eee; border-radius: 8px; margin-top: 20px; overflow: hidden; }
-        .nfe-header { background-color: #f8f9fa; padding: 15px; border-bottom: 1px solid #eee; }
-        .nfe-header h3 { margin: 0; font-size: 18px; }
-        .nfe-body { padding: 15px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 14px; }
-        th { background-color: #f2f2f2; font-weight: 600; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7fafc;
+        }
+        .table-responsive {
+            overflow-x: auto;
+        }
+        table {
+            min-width: 1400px; 
+        }
+        th, td {
+            padding: 10px;
+            font-size: 0.85rem;
+            vertical-align: top;
+        }
+        .code-meaning {
+            display: block;
+            font-size: 0.75rem;
+            color: #4a5568;
+            margin-top: 3px;
+        }
+        .lot-info {
+            font-size: 0.75rem;
+            color: #2b6cb0;
+            font-weight: 500;
+        }
+        .classificacao-positiva { background-color: #d1fae5; color: #065f46; font-weight: 600; }
+        .classificacao-negativa { background-color: #fee2e2; color: #991b1b; font-weight: 600; }
+        .classificacao-neutra { background-color: #eff6ff; color: #1e40af; font-weight: 600; }
+        .inf-ad-prod-highlight {
+            background-color: #f0f9ff;
+            color: #1e40af;
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 6px;
+            display: block;
+            border: 1px solid #bae6fd;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            margin-top: 4px;
+        }
+        .pmc-highlight {
+            background-color: #fefcbf;
+            color: #92400e;
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 6px;
+            display: block;
+            border: 1px solid #fde68a;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .price-cell {
+            text-align: right;
+        }
+        .alerta-risco {
+            background-color: #fce7f3;
+            color: #be185d;
+            font-weight: 700;
+            border: 1px solid #f9a8d4;
+        }
+        .alerta-st-destacada {
+            background-color: #fef3c7;
+            color: #b45309;
+            font-weight: 700;
+            border: 1px solid #fcd34d;
+        }
     </style>
 </head>
-<body>
-    <div class="container">
-        <h1>Analisador Completo de NF-e e Duplicatas (XML)</h1>
-        <div id="drop-area">
-            <p>Arraste e solte arquivos XML aqui ou clique para selecionar</p>
-            <input type="file" id="file-input" multiple accept=".xml" style="display: none;">
-        </div>
-        <ul id="file-list"></ul>
-        <div id="message-area"></div>
-        <div id="results"></div>
+<body class="p-4 sm:p-8">
+
+    <h1 class="text-3xl font-bold text-gray-800 border-b-4 border-blue-500 pb-2 mb-6 rounded-md">
+        Processador de XMLs para Cadastro de Produtos
+    </h1>
+
+    <div id="inputArea" class="bg-white p-4 sm:p-6 shadow-lg rounded-xl mb-8 border border-gray-200">
+        <label for="xmlInput" class="block text-lg font-medium text-gray-700 mb-3">
+            Selecione um ou mais arquivos XML de NF-e de Compra:
+        </label>
+        <input type="file" id="xmlInput" multiple accept=".xml" class="block w-full text-sm text-gray-500
+            file:mr-4 file:py-2 file:px-4
+            file:rounded-lg file:border-0
+            file:text-sm file:font-semibold
+            file:bg-blue-50 file:text-blue-700
+            hover:file:bg-blue-100 cursor-pointer">
+    </div>
+
+    <!-- ÁREA ADICIONADA PARA MENSAGENS DE ENVIO -->
+    <div id="message-area" class="mb-4 space-y-2"></div>
+
+    <div id="fiscalLegend" class="bg-indigo-50 p-5 shadow-inner rounded-xl mb-8 border-l-4 border-indigo-400">
+        <h2 class="text-xl font-semibold text-indigo-800 mb-3">Contexto Fiscal de PIS/COFINS (Medicamentos)</h2>
+        <ul class="list-disc ml-5 text-gray-700 space-y-2">
+            <li>
+                <strong class="text-indigo-900">Lista Positiva:</strong> Isento ou Alíquota Zero/Suspensão. Crédito presumido, anulação do débito, não incidência na revenda.
+            </li>
+            <li>
+                <strong class="text-indigo-900">Lista Negativa (Monofásico):</strong> Indústria paga com alíquota majorada. Revenda tem Alíquota Zero (CST 04).
+            </li>
+            <li>
+                <strong class="text-indigo-900">Lista Neutra (Regime Geral):</strong> PIS/COFINS cobrado em cada etapa (Crédito na compra, débito na venda - CST 01/02/03/49/99).
+            </li>
+        </ul>
+        <p class="mt-4 text-sm text-indigo-700 font-semibold">
+            *A classificação exibida na tabela prioriza a informação interna do fornecedor (POS/NEG/NEU no infAdProd), usando o CST Fiscal como referência secundária.
+        </p>
+
+        <hr class="my-5 border-indigo-200"> <h2 class="text-xl font-semibold text-indigo-800 mb-3">Contexto Fiscal de ICMS (Substituição Tributária - ST)</h2>
+        <ul class="list-disc ml-5 text-gray-700 space-y-2">
+            <li>
+                <strong class="text-indigo-900">CST/CSOSN 60 ou 500:</strong> ICMS cobrado anteriormente por ST (Substituído). O imposto de revenda já está pago. <strong class="text-green-600">(Status OK)</strong>
+            </li>
+            <li>
+                <strong class="text-red-600">CST 00, 10, 20:</strong> Tributado Integralmente ou com ST pelo remetente. <strong class="text-red-600">(ALERTA DE RISCO)</strong> - Se o NCM é de ST, e o **Vlr ICMS-ST (vICMSST)** for zero, o risco é alto. Se o Vlr ICMS-ST for positivo, o alerta será apenas de conferência.
+            </li>
+            <li>
+                <strong class="text-indigo-900">CST 40/41, 90/900:</strong> Isenta, Não Tributada ou Outras. **(STATUS NEUTRO)** - Conferir a base legal.
+            </li>
+        </ul>
+        <p class="mt-4 text-sm text-indigo-700 font-semibold">
+            *A coluna "Situação ICMS" agora exibe o valor do **vICMSST** (se existir) para auxiliar na conferência do pagamento da ST.
+        </p>
+    </div>
+    <div id="resultsArea">
+        <p class="text-gray-600">Aguardando a seleção dos arquivos XML...</p>
     </div>
 
     <script>
         // =================================================================================
-        // ✅ CONFIGURAÇÃO DO SEU WEB APP DO GOOGLE APPS SCRIPT
+        // ✅ 1. CONFIGURAÇÃO DO GOOGLE APPS SCRIPT
         // =================================================================================
-        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyni99dUfh6RZVkR89e5YlvBMQhoFPPHWJi7eIbYlEV-4-XkYwiwHeVfHCVDJvtzCvT3Q/exec'; // ⚠️ ATENÇÃO: Use o URL da versão com anti-duplicidade.
+        const WEB_APP_URL = 'COLE_SEU_ULTIMO_URL_DO_GOOGLE_APPS_SCRIPT_AQUI';
 
-        // --- Elementos do DOM ---
-        const dropArea = document.getElementById('drop-area');
-        const fileInput = document.getElementById('file-input');
-        const fileList = document.getElementById('file-list');
-        const resultsDiv = document.getElementById('results');
+        document.getElementById('xmlInput').addEventListener('change', handleFileSelect);
+
+        const resultsArea = document.getElementById('resultsArea');
+        const parser = new DOMParser();
         const messageArea = document.getElementById('message-area');
 
-        // --- Funções de Drag and Drop ---
-        ['dragenter', 'dragover'].forEach(eventName => dropArea.addEventListener(eventName, () => dropArea.classList.add('drag-over')));
-        ['dragleave', 'drop'].forEach(eventName => dropArea.addEventListener(eventName, () => dropArea.classList.remove('drag-over')));
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => dropArea.addEventListener(eventName, e => { e.preventDefault(); e.stopPropagation(); }));
-        dropArea.addEventListener('drop', e => handleFiles(e.dataTransfer.files));
-        dropArea.addEventListener('click', () => fileInput.click());
-        fileInput.addEventListener('change', e => handleFiles(e.target.files));
+        const CSOSN_MEANINGS = {
+            '00': 'CST - Tributada integralmente', '10': 'CST - Tributada e com ST', '20': 'CST - Com redução da Base de Cálculo',
+            '30': 'CST - Isenta / Não tributada e com ST', '40': 'CST - Isenta', '41': 'CST - Não tributada',
+            '50': 'CST - Com suspensão', '51': 'CST - Com diferimento', '60': 'CST - ICMS cobrado por ST (Substituído)',
+            '70': 'CST - Com redução da BC e cobrança do ICMS por ST', '90': 'CST - Outras',
+            '101': 'CSOSN - Tributada SN com permissão de crédito', '102': 'CSOSN - Tributada SN sem permissão de crédito',
+            '103': 'CSOSN - Isenção ICMS SN para faixa de receita bruta', '201': 'CSOSN - Tributada SN com crédito e ICMS cobrado por ST',
+            '202': 'CSOSN - Tributada SN sem crédito e ICMS cobrado por ST', '203': 'CSOSN - Isenção ICMS SN para faixa de receita bruta e com cobrança do ICMS por ST',
+            '300': 'CSOSN - Imune (Produto Imune ao ICMS)', '400': 'CSOSN - Não tributada (Isenção legal ICMS/Remessa)',
+            '500': 'CSOSN - ICMS cobrado anteriormente por ST (Substituído)', '900': 'CSOSN - Outros (demais casos)',
+        };
 
-        // --- Função Principal de Orquestração ---
-        function handleFiles(files) {
-            resultsDiv.innerHTML = '';
-            fileList.innerHTML = '';
-            
-            [...files].forEach(file => {
-                const listItem = document.createElement('li');
-                listItem.textContent = `Arquivo carregado: ${file.name}`;
-                fileList.appendChild(listItem);
-                
+        const PIS_COFINS_MEANINGS = {
+            '01': 'Saída: Tributável com Alíquota Básica', '02': 'Saída: Tributável com Alíquota Diferenciada', 
+            '03': 'Saída: Tributável por Unidade de Medida', '04': 'Saída: Monofásica – Revenda a Alíquota Zero (Lista Negativa)',
+            '05': 'Saída: Substituição Tributária', '06': 'Saída: Tributável a Alíquota Zero (Lista Positiva)',
+            '07': 'Saída: Operação Isenta da Contribuição (Lista Positiva)', '08': 'Saída: Operação sem Incidência (Imune - Lista Positiva)',
+            '09': 'Saída: Operação com Suspensão da Contribuição (Lista Positiva)', '49': 'Saída: Outras Operações de Saída',
+            '50': 'Entrada: Crédito Não Cumulativo - Vinculado a Receita Tributada', '51': 'Entrada: Crédito Não Cumulativo - Vinculado a Receita Não Tributada',
+            '52': 'Entrada: Crédito Não Cumulativo - Vinculado a Exportação', '53': 'Entrada: Crédito Não Cumulativo - Vinculado a Tributada e Não-Tributada',
+            '54': 'Entrada: Crédito Não Cumulativo - Vinculado a Tributada e Exportação', '55': 'Entrada: Crédito Não Cumulativo - Vinculado a Não-Tributada e Exportação',
+            '56': 'Entrada: Crédito Não Cumulativo - Vinculado a Todas as Receitas', '60': 'Entrada: Crédito Presumido - Vinculado a Receita Tributada',
+            '61': 'Entrada: Crédito Presumido - Vinculado a Receita Não Tributada', '62': 'Entrada: Crédito Presumido - Vinculado a Exportação',
+            '63': 'Entrada: Crédito Presumido - Vinculado a Tributada e Não-Tributada', '64': 'Entrada: Crédito Presumido - Vinculado a Tributada e Exportação',
+            '65': 'Entrada: Crédito Presumido - Vinculado a Não-Tributada e Exportação', '66': 'Entrada: Crédito Presumido - Vinculado a Todas as Receitas',
+            '99': 'Outras Operações',
+        };
+
+        function getFiscalClassification(cst) {
+            switch (cst) {
+                case '04': return { classification: 'Lista Negativa (Monofásico - CST)', cssClass: 'classificacao-negativa' };
+                case '06': case '07': case '08': case '09': return { classification: 'Lista Positiva (Isento/Alíq. Zero - CST)', cssClass: 'classificacao-positiva' };
+                case '01': case '02': case '03': case '49': case '99': return { classification: 'Lista Neutra (Regime Geral - CST)', cssClass: 'classificacao-neutra' };
+                default: return { classification: 'Verificar CST', cssClass: 'bg-gray-200' };
+            }
+        }
+
+        function getInternalClassification(infAdProd) {
+            if (!infAdProd) return null;
+            const match = infAdProd.trim().match(/^\((POS|NEG|NEU)\)/i);
+            if (match) return match[1].toUpperCase();
+            return null;
+        }
+        
+        function getIcmsStatus(icmsCode, vIcmsStValue) {
+            if (!icmsCode) return { status: 'N/D', cssClass: 'bg-gray-200', detail: '' };
+            const vIcmsStNum = parseFloat(vIcmsStValue) || 0; 
+            if (icmsCode === '60' || icmsCode === '500') {
+                let detail = vIcmsStNum > 0 ? `(Base ST calculada no XML)` : '';
+                return { status: 'OK (ST PAGA)', cssClass: 'classificacao-positiva bg-green-100', detail: detail };
+            }
+            if (icmsCode === '00' || icmsCode === '10' || icmsCode === '20') {
+                let statusText, detailText = `CST: ${icmsCode}`, css;
+                if (vIcmsStNum > 0) {
+                    statusText = 'ST DESTACADA (CONFERIR)';
+                    css = 'alerta-st-destacada';
+                    detailText += `. Vlr ST: R$ ${formatCurrency(vIcmsStNum)}`;
+                } else {
+                    statusText = 'VERIFICAR ST! (RISCO ALTO)';
+                    css = 'alerta-risco';
+                    detailText += `. Vlr ST: R$ 0,00`;
+                }
+                return { status: statusText, cssClass: css, detail: detailText };
+            }
+            if (icmsCode === '30' || icmsCode === '40' || icmsCode === '41' || icmsCode === '90' || (icmsCode.length === 3 && (icmsCode === '102' || icmsCode === '103' || icmsCode === '202' || icmsCode === '300' || icmsCode === '400' || icmsCode === '900'))) {
+                 let detail = vIcmsStNum > 0 ? `(Vlr ST: R$ ${formatCurrency(vIcmsStNum)})` : '';
+                 return { status: 'ISENTO/OUTROS (Conferir NCM/Lei)', cssClass: 'classificacao-neutra bg-yellow-50', detail: detail };
+            }
+            return { status: 'VERIFICAR CST NÃO PADRÃO', cssClass: 'bg-gray-200', detail: '' };
+        }
+
+        function getMeaning(code, map) {
+            return map[code] || 'Código não mapeado/inválido';
+        }
+
+        function handleFileSelect(event) {
+            const files = event.target.files;
+            const oldNfeContainers = resultsArea.querySelectorAll('.nfeContainer');
+            oldNfeContainers.forEach(container => container.remove());
+            messageArea.innerHTML = '';
+
+            if (files.length === 0) {
+                resultsArea.innerHTML = '<p class="text-gray-600">Aguardando a seleção dos arquivos XML...</p>';
+                return;
+            }
+            if (resultsArea.querySelectorAll('.nfeContainer').length === 0) {
+                 resultsArea.innerHTML = '<p class="text-blue-500 font-semibold mb-4">Processando arquivos. Por favor, aguarde...</p>';
+            }
+
+            let filesProcessed = 0;
+            const totalFiles = files.length;
+            let foundValidNfe = false;
+
+            Array.from(files).forEach(file => {
                 const reader = new FileReader();
-                reader.onload = function(event) {
-                    const xmlText = event.target.result;
-                    const parser = new DOMParser();
-                    const xmlDoc = parser.parseFromString(xmlText, "application/xml");
-                    
-                    // 1. Extrai e exibe os dados visuais completos na tela
-                    const extractedHtml = extractAndDisplayVisualData(xmlDoc);
-                    resultsDiv.innerHTML += extractedHtml;
-
-                    // 2. Extrai os dados das duplicatas para enviar para a planilha
-                    const dataToSend = extractDuplicatesForSheet(xmlDoc);
-                    if (dataToSend.length > 0) {
-                        dataToSend.forEach(duplicata => {
-                            enviarDadosParaPlanilha(duplicata);
-                        });
-                    } else {
-                        displayMessage('warning', `Nenhuma duplicata encontrada no arquivo ${file.name} para ser enviada à planilha.`);
+                reader.onload = function(e) {
+                    try {
+                        const xmlString = e.target.result;
+                        if (processXml(file.name, xmlString)) {
+                            foundValidNfe = true;
+                        }
+                    } catch (error) {
+                        displayMessage('error', `Erro interno ao processar ${file.name}: ${error.message}`);
+                    } finally {
+                        filesProcessed++;
+                        if (filesProcessed === totalFiles) {
+                            const processingMessage = resultsArea.querySelector('.text-blue-500');
+                            if (processingMessage) processingMessage.remove();
+                            if (!foundValidNfe && resultsArea.querySelectorAll('.nfeContainer').length === 0) {
+                                resultsArea.innerHTML = '<p class="error text-red-600 font-semibold">Nenhuma informação válida de NF-e foi encontrada nos arquivos selecionados.</p>';
+                            }
+                        }
                     }
+                };
+                reader.onerror = function() {
+                    displayMessage('error', `Erro ao ler o arquivo: ${file.name}`);
                 };
                 reader.readAsText(file);
             });
         }
         
+        function processXml(fileName, xmlString) {
+            const xmlDoc = parser.parseFromString(xmlString, "text/xml");
+            if (xmlDoc.getElementsByTagName('parsererror').length > 0) {
+                displayMessage('error', `Erro de parsing XML no arquivo ${fileName}.`);
+                return false;
+            }
+            const nfeElement = xmlDoc.getElementsByTagName('infNFe')[0];
+            if (!nfeElement) {
+                displayMessage('error', `Arquivo ${fileName} não parece ser uma NF-e válida (tag infNFe não encontrada).`);
+                return false;
+            }
+            const nNF = safeQuery(nfeElement, 'ide/nNF') || 'N/A';
+            const cnpjEmit = safeQuery(nfeElement, 'emit/CNPJ') || 'N/A';
+            const xNomeEmit = safeQuery(nfeElement, 'emit/xNome') || 'N/A';
+            const detElements = xmlDoc.getElementsByTagName('det');
+            if (detElements.length === 0) {
+                 displayMessage('error', `Nota ${nNF} (${fileName}) não possui itens (<det>).`);
+                 return true;
+            }
+            const processingMessage = resultsArea.querySelector('.text-blue-500');
+            if (processingMessage) processingMessage.remove();
+            const container = document.createElement('div');
+            container.className = 'nfeContainer bg-white p-6 shadow-xl rounded-xl mb-8 border-l-4 border-blue-600';
+            container.innerHTML = `
+                <div class="nfeHeader text-xl font-bold text-gray-800 mb-4">
+                    NF-e: <span class="text-blue-600">${nNF}</span> | Emitente: ${xNomeEmit} (CNPJ: ${cnpjEmit})
+                </div>
+                <div class="table-responsive">
+                    <table class="w-full text-left border border-gray-300 rounded-lg">
+                        <thead>
+                            <tr class="bg-blue-50 text-blue-700">
+                                <th class="rounded-tl-lg">Cód. Forn.</th>
+                                <th>Descrição do Produto</th>
+                                <th>Cód. Barras (EAN)</th> 
+                                <th>ICMS (CST/CSOSN) & NCM</th> 
+                                <th class="bg-pink-200 text-pink-800">Situação ICMS (ST)</th> <th>CST PIS</th>
+                                <th>CST COFINS</th>
+                                <th class="bg-blue-200 text-blue-800">Classificação PIS/COFINS (Fornecedor/CST)</th> 
+                                <th>Lote / Datas</th>
+                                <th class="price-cell">Vlr Unit. (R$)</th>
+                                <th class="rounded-tr-lg">PMP/PMC</th> 
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${Array.from(detElements).map(det => extractItemData(det)).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            resultsArea.appendChild(container);
+
+            const duplicatasParaEnviar = extractDuplicatesForSheet(xmlDoc);
+            if (duplicatasParaEnviar.length > 0) {
+                duplicatasParaEnviar.forEach(dup => {
+                    enviarDadosParaPlanilha(dup);
+                });
+            } else {
+                displayMessage('warning', `Aviso: Nenhuma duplicata encontrada na NF-e ${nNF} para enviar à planilha.`);
+            }
+            return true;
+        }
+
+        function extractItemData(detElement) {
+            const cProd = safeQuery(detElement, 'prod/cProd');
+            const xProd = safeQuery(detElement, 'prod/xProd');
+            const vUnCom = formatCurrency(safeQuery(detElement, 'prod/vUnCom'));
+            const NCM = safeQuery(detElement, 'prod/NCM'); 
+            const cEAN = safeQuery(detElement, 'prod/cEAN');
+            const cEANTrib = safeQuery(detElement, 'prod/cEANTrib');
+            const codigoBarras = (cEAN && cEAN !== 'SEM GTIN') ? cEAN : ((cEANTrib && cEANTrib !== 'SEM GTIN') ? cEANTrib : 'N/D');
+            let icmsCode = safeQuery(detElement, 'imposto/ICMS/*/CSOSN'); 
+            if (!icmsCode) icmsCode = safeQuery(detElement, 'imposto/ICMS/*/CST'); 
+            const vIcmsStValue = safeQuery(detElement, 'imposto/ICMS/*/vICMSST');
+            const pisCST = safeQuery(detElement, 'imposto/PIS/*/CST') || 'N/D';
+            const cofinsCST = safeQuery(detElement, 'imposto/COFINS/*/CST') || 'N/D';
+            const infAdProd = safeQuery(detElement, 'infAdProd'); 
+            const vPMCValue = safeQuery(detElement, 'prod/med/vPMC');
+            const internalClassificationCode = getInternalClassification(infAdProd);
+            const cstClassification = getFiscalClassification(pisCST);
+            let finalClassification = {};
+            if (internalClassificationCode) {
+                let classificationText = '', cssClass = '';
+                switch (internalClassificationCode) {
+                    case 'POS': classificationText = `POS: Lista Positiva (Fornecedor)`; cssClass = 'classificacao-positiva'; break;
+                    case 'NEG': classificationText = `NEG: Lista Negativa (Fornecedor)`; cssClass = 'classificacao-negativa'; break;
+                    case 'NEU': classificationText = `NEU: Lista Neutra (Fornecedor)`; cssClass = 'classificacao-neutra'; break;
+                }
+                finalClassification = { classification: classificationText, cssClass: cssClass, calculatedCstText: `CST Fiscal: ${pisCST}`};
+            } else {
+                finalClassification = { classification: cstClassification.classification, cssClass: cstClassification.cssClass, calculatedCstText: `CST Fiscal: ${pisCST}`};
+            }
+            const icmsStatus = getIcmsStatus(icmsCode, vIcmsStValue);
+            const dFab = safeQuery(detElement, 'prod/rastro/dFab') || safeQuery(detElement, 'prod/med/dFab');
+            const dVal = safeQuery(detElement, 'prod/rastro/dVal') || safeQuery(detElement, 'prod/med/dVal');
+            const nLote = safeQuery(detElement, 'prod/rastro/nLote') || safeQuery(detElement, 'prod/med/nLote');
+            const qLote = safeQuery(detElement, 'prod/rastro/qLote') || safeQuery(detElement, 'prod/med/qLote');
+            const dFabFormatted = formatDate(dFab);
+            const dValFormatted = formatDate(dVal);
+            let infAdProdDisplay = [];
+            if (vPMCValue) {
+                const pmcFormatted = formatCurrency(vPMCValue);
+                infAdProdDisplay.push(`<div class="pmc-highlight" title="Preço Máximo ao Consumidor (vPMC)">PMC: R$ ${pmcFormatted}</div>`);
+            }
+            if (infAdProd) {
+                infAdProdDisplay.push(`<div class="inf-ad-prod-highlight" title="Informação Adicional do Produto (infAdProd)">${infAdProd}</div>`);
+            }
+            const pmcPmpCellContent = infAdProdDisplay.length > 0 ? infAdProdDisplay.join('') : 'N/D';
+            const lotContent = `${nLote ? `Lote: ${nLote}<br>` : ''}${qLote ? `Qtde Lote: ${parseFloat(qLote).toFixed(2)}<br>` : ''}${dFabFormatted ? `Fab.: ${dFabFormatted}<br>` : ''}${dValFormatted ? `Val.: ${dValFormatted}<br>` : ''}${!nLote && !qLote && !dFabFormatted && !dValFormatted ? 'Nenhuma informação de lote.' : ''}`;
+            const icmsCellContent = icmsCode ? `${icmsCode} <span class="code-meaning">(${getMeaning(icmsCode, CSOSN_MEANINGS)})</span>` : 'N/D';
+            const pisCellContent = pisCST !== 'N/D' ? `${pisCST} <span class="code-meaning">(${getMeaning(pisCST, PIS_COFINS_MEANINGS)})</span>` : 'N/D';
+            const cofinsCellContent = cofinsCST !== 'N/D' ? `${cofinsCST} <span class="code-meaning">(${getMeaning(cofinsCST, PIS_COFINS_MEANINGS)})</span>` : 'N/D';
+
+            return `
+                <tr class="hover:bg-gray-50 border-t border-gray-100">
+                    <td>${cProd || 'N/D'}</td>
+                    <td>${xProd || 'N/D'}</td>
+                    <td>${codigoBarras}</td> 
+                    <td class="bg-yellow-50">
+                        ${icmsCellContent}
+                        <span class="code-meaning mt-1 text-xs">NCM: ${NCM || 'N/D'}</span>
+                    </td>
+                    <td class="${icmsStatus.cssClass} text-center font-bold">
+                        ${icmsStatus.status}
+                        <span class="code-meaning mt-1 text-xs text-current">${icmsStatus.detail}</span>
+                    </td>
+                    <td>${pisCellContent}</td>
+                    <td>${cofinsCellContent}</td>
+                    <td class="${finalClassification.cssClass} text-center font-bold">
+                        ${finalClassification.classification}
+                        <span class="code-meaning mt-1 text-xs">(${finalClassification.calculatedCstText})</span>
+                    </td>
+                    <td class="lot-info">${lotContent}</td>
+                    <td class="font-semibold text-green-700 price-cell">${vUnCom}</td>
+                    <td>${pmcPmpCellContent}</td> 
+                </tr>
+            `;
+        }
+
+        function safeQuery(baseElement, path) {
+            const parts = path.split('/');
+            let current = baseElement;
+            for (const part of parts) {
+                if (!current) return null;
+                let nextElement;
+                if (part === '*') {
+                    const impostoGroup = current.children; 
+                    if (impostoGroup.length > 0) nextElement = impostoGroup[0];
+                } else {
+                    nextElement = current.getElementsByTagName(part)[0];
+                }
+                current = nextElement;
+            }
+            return current ? current.textContent.trim() : null;
+        }
+
+        function formatDate(dateString) {
+            if (!dateString || dateString.length !== 10) return '';
+            const [year, month, day] = dateString.split('-');
+            if (year && month && day) return `${day}/${month}/${year}`;
+            return '';
+        }
+
+        function formatCurrency(value) {
+            const num = parseFloat(value);
+            if (isNaN(num)) return 'N/D';
+            return num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+        
         function displayMessage(type, message) {
-            const newMessage = document.createElement('div');
-            newMessage.style.display = 'block';
-            newMessage.className = `message-${type}`;
-            newMessage.textContent = message;
-            messageArea.prepend(newMessage); // Adiciona novas mensagens no topo
+            const cssMap = {
+                success: 'bg-green-100 border-green-400 text-green-700',
+                error: 'bg-red-100 border-red-400 text-red-700',
+                warning: 'bg-yellow-100 border-yellow-400 text-yellow-700'
+            };
+            const p = document.createElement('p');
+            p.className = `p-3 mt-2 border rounded-md text-sm font-medium ${cssMap[type] || 'bg-gray-100'}`;
+            p.textContent = message;
+            messageArea.prepend(p);
         }
 
-        // =================================================================================
-        // ✅ FUNÇÃO DE EXTRAÇÃO VISUAL COMPLETA
-        // Extrai todos os detalhes dos produtos para exibir na tela.
-        // =================================================================================
-        function extractAndDisplayVisualData(xmlDoc) {
-            const nfeProc = xmlDoc.querySelector('nfeProc');
-            if (!nfeProc) return '<p>Estrutura de NF-e inválida.</p>';
-
-            const nNF = nfeProc.querySelector('nNF')?.textContent || 'N/D';
-            const xNome = nfeProc.querySelector('emit xNome')?.textContent || 'N/D';
-            const CNPJ = nfeProc.querySelector('emit CNPJ')?.textContent || 'N/D';
-            
-            let html = `<div class="nfe-card">
-                            <div class="nfe-header">
-                                <h3>NF-e: ${nNF} | Emitente: ${xNome} (CNPJ: ${CNPJ})</h3>
-                            </div>
-                            <div class="nfe-body">`;
-            
-            const detList = nfeProc.querySelectorAll('det');
-            if (detList.length > 0) {
-                html += '<h4>Produtos</h4><table>';
-                html += '<tr><th>Produto</th><th>Lote/Validade</th><th>Qtde</th><th>Vlr. Unit.</th><th>Impostos (CST)</th></tr>';
-                
-                detList.forEach(det => {
-                    const prod = det.querySelector('prod');
-                    const imposto = det.querySelector('imposto');
-
-                    const xProd = prod.querySelector('xProd')?.textContent || 'N/D';
-                    const cProd = prod.querySelector('cProd')?.textContent || '';
-                    const vUnCom = parseFloat(prod.querySelector('vUnCom')?.textContent || 0).toFixed(2);
-                    const qCom = parseFloat(prod.querySelector('qCom')?.textContent || 0).toFixed(2);
-
-                    const rastro = prod.querySelector('rastro');
-                    const nLote = rastro?.querySelector('nLote')?.textContent || 'N/D';
-                    const dVal = rastro?.querySelector('dVal')?.textContent.split('-').reverse().join('/') || 'N/D';
-                    
-                    const icmsNode = imposto.querySelector('ICMS > *'); // Pega o primeiro filho de ICMS
-                    const pisNode = imposto.querySelector('PIS > *');
-                    const cofinsNode = imposto.querySelector('COFINS > *');
-
-                    const cstIcms = icmsNode?.querySelector('CST')?.textContent || icmsNode?.querySelector('CSOSN')?.textContent || 'N/D';
-                    const cstPis = pisNode?.querySelector('CST')?.textContent || 'N/D';
-                    const cstCofins = cofinsNode?.querySelector('CST')?.textContent || 'N/D';
-
-                    html += `<tr>
-                                <td>${cProd} - ${xProd}</td>
-                                <td>Lote: ${nLote}<br>Val: ${dVal}</td>
-                                <td>${qCom}</td>
-                                <td>R$ ${vUnCom}</td>
-                                <td>ICMS: ${cstIcms}<br>PIS: ${cstPis}<br>COFINS: ${cstCofins}</td>
-                             </tr>`;
-                });
-                html += '</table>';
-            }
-
-            const cobr = nfeProc.querySelector('cobr');
-            if (cobr) {
-                const dupList = cobr.querySelectorAll('dup');
-                html += '<h4>Duplicatas</h4><table><tr><th>Vencimento</th><th>Valor</th></tr>';
-                dupList.forEach(dup => {
-                    const dVenc = dup.querySelector('dVenc')?.textContent || 'N/D';
-                    const vDup = parseFloat(dup.querySelector('vDup')?.textContent || 0).toFixed(2);
-                    html += `<tr><td>${dVenc}</td><td>R$ ${vDup}</td></tr>`;
-                });
-                html += '</table>';
-            }
-            
-            html += '</div></div>';
-            return html;
+        function displayError(message) {
+            displayMessage('error', message);
         }
 
-        // =================================================================================
-        // FUNÇÃO DE EXTRAÇÃO PARA A PLANILHA (Simplificada)
-        // Extrai apenas os dados necessários para o Google Apps Script.
-        // =================================================================================
         function extractDuplicatesForSheet(xmlDoc) {
-            const nfeProc = xmlDoc.querySelector('nfeProc');
-            if (!nfeProc) return [];
-
-            const fornecedor = nfeProc.querySelector('emit xNome')?.textContent || '';
-            const numero = nfeProc.querySelector('nNF')?.textContent || '';
-            const dataNota = nfeProc.querySelector('dhEmi')?.textContent.split('T')[0] || '';
-            const valorNota = nfeProc.querySelector('ICMSTot vNF')?.textContent || '';
-
+            const nfeElement = xmlDoc.getElementsByTagName('infNFe')[0];
+            if (!nfeElement) return [];
+            const fornecedor = safeQuery(nfeElement, 'emit/xNome') || '';
+            const numero = safeQuery(nfeElement, 'ide/nNF') || '';
+            const dataNota = (safeQuery(nfeElement, 'ide/dhEmi') || '').split('T')[0];
+            const valorNota = safeQuery(xmlDoc, 'infNFe/total/ICMSTot/vNF') || '';
             const dataObjects = [];
-            const dupList = nfeProc.querySelectorAll('cobr dup');
-            dupList.forEach(dup => {
-                const dVenc = dup.querySelector('dVenc')?.textContent || '';
-                const vDup = dup.querySelector('vDup')?.textContent || '';
-                
+            const dupList = nfeElement.getElementsByTagName('dup');
+            Array.from(dupList).forEach(dup => {
+                const dVenc = dup.getElementsByTagName('dVenc')[0]?.textContent || '';
+                const vDup = dup.getElementsByTagName('vDup')[0]?.textContent || '';
                 dataObjects.push({ fornecedor, numero, dataNota, valorNota, dVenc, vDup });
             });
             return dataObjects;
         }
 
-        // =================================================================================
-        // ✅ FUNÇÃO DE ENVIO COM A MENSAGEM DO ERRO 502 MELHORADA
-        // =================================================================================
         async function enviarDadosParaPlanilha(dados) {
+            if (!WEB_APP_URL || WEB_APP_URL.includes('https://script.google.com/macros/s/AKfycbyni99dUfh6RZVkR89e5YlvBMQhoFPPHWJi7eIbYlEV-4-XkYwiwHeVfHCVDJvtzCvT3Q/exec')) {
+                displayMessage('error', 'Erro Crítico: A URL do Google Apps Script não foi configurada no código HTML.');
+                return;
+            }
             try {
                 const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(WEB_APP_URL)}`;
                 const response = await fetch(proxyUrl, {
-                    method: 'POST',
-                    mode: 'cors',
+                    method: 'POST', mode: 'cors',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(dados)
                 });
-
                 if (!response.ok) throw new Error(`Erro HTTP ${response.status}`);
-                
                 const result = await response.json();
                 if (result.success) {
                     if (result.status === 'duplicate_skipped') {
-                        displayMessage('warning', `OK: Duplicata da NF ${dados.numero} (venc. ${dados.dVenc}) já existia e foi ignorada.`);
+                        displayMessage('warning', `OK: Duplicata da NF ${dados.numero} (venc. ${dados.dVenc}) já existia na planilha.`);
                     } else {
                         displayMessage('success', `OK: Duplicata da NF ${dados.numero} (venc. ${dados.dVenc}) enviada e confirmada.`);
                     }
                 } else {
-                    displayMessage('error', `Falha no Script: ${result.error || 'Erro desconhecido'}`);
+                    displayMessage('error', `Falha no Script Google: ${result.error || 'Erro desconhecido'}`);
                 }
             } catch (error) {
-                // --- TRATAMENTO INTELIGENTE DO ERRO 502 ---
                 if (error.message.includes('502')) {
-                    displayMessage('success', `OK! Envio da NF ${dados.numero} concluído. A confirmação falhou (erro 502), mas o registro provavelmente foi salvo.`);
+                    displayMessage('success', `✅ OK! Envio da NF ${dados.numero} concluído. A confirmação falhou (erro 502), mas o registro foi salvo com sucesso.`);
                 } else {
                     displayMessage('error', `Falha Crítica de Conexão: ${error.message}`);
                 }
