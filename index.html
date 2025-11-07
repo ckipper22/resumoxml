@@ -1,449 +1,569 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Processador de XMLs + Envio Manual para Planilha</title>
-
-  <!-- TAILWIND CSS COMPILADO (PRODUÇÃO) -->
-  <link href="./styles/output.css" rel="stylesheet" />
-
-  <style>
-    body { font-family: 'Inter', sans-serif; background-color: #f7fafc; color: #1a202c; }
-    .table-container { position: relative; max-height: 75vh; overflow: auto; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border-radius: 0.75rem; }
-    table { width: 100%; border-collapse: collapse; min-width: 1600px; }
-    th, td { padding: 12px 10px; font-size: 0.8rem; vertical-align: middle; border-bottom: 1px solid #e2e8f0; }
-    thead th { position: sticky; top: 0; z-index: 20; background-color: #2b6cb0; color: #ffffff; font-weight: 700; cursor: pointer; user-select: none; }
-    thead th:hover { background-color: #1e40af; }
-    tbody tr:nth-child(even) { background-color: #f8fafc; }
-    .code-meaning { display: block; font-size: 0.7rem; color: #4a5568; margin-top: 3px; }
-    .lot-info { font-size: 0.75rem; color: #2b6cb0; font-weight: 500; }
-    .price-cell { text-align: right; font-weight: 700; }
-    .classificacao-positiva { background-color: #ecfdf5; color: #059669; font-weight: 600; border-left: 4px solid #10b981; }
-    .classificacao-negativa { background-color: #fff7ed; color: #d97706; font-weight: 600; border-left: 4px solid #f59e0b; }
-    .classificacao-neutra { background-color: #eff6ff; color: #3b82f6; font-weight: 600; border-left: 4px solid #60a5fa; }
-    .inf-ad-prod-highlight, .pmc-highlight { padding: 3px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; margin-top: 3px; }
-    .inf-ad-prod-highlight { background-color: #f0f9ff; color: #1e40af; border: 1px solid #bae6fd; }
-    .pmc-highlight { background-color: #fefce8; color: #a16207; border: 1px solid #fcd34d; }
-    .nfeHeaderRow td { background-color: #e0e7ff !important; font-weight: 700; font-size: 0.95rem; color: #1e40af; border-top: 3px solid #93c5fd; position: sticky; top: 48px; z-index: 15; }
-    #dropArea { border: 3px dashed #93c5fd; background-color: #f0f9ff; transition: all 0.2s ease; }
-    .drag-over { border-color: #3b82f6 !important; background-color: #e0f2fe !important; box-shadow: 0 0 10px rgba(59, 130, 246, 0.5); }
-    @media (max-width: 1600px) { .table-container { overflow-x: auto; } }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Processador de XMLs + Envio Manual para Planilha</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7fafc;
+            color: #1a202c;
+        }
+        .table-container {
+            position: relative;
+            max-height: 75vh;
+            overflow: auto;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+            border-radius: 0.75rem;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1600px;
+        }
+        th, td {
+            padding: 12px 10px;
+            font-size: 0.8rem;
+            vertical-align: middle;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        thead th {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            background-color: #2b6cb0;
+            color: #ffffff;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            user-select: none;
+        }
+        thead th:hover {
+            background-color: #1e40af;
+        }
+        tbody tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+        .code-meaning { display: block; font-size: 0.7rem; color: #4a5568; margin-top: 3px; }
+        .lot-info { font-size: 0.75rem; color: #2b6cb0; font-weight: 500; }
+        .price-cell { text-align: right; font-weight: 700; }
+        .classificacao-positiva { background-color: #ecfdf5; color: #059669; font-weight: 600; border-left: 4px solid #10b981; }
+        .classificacao-negativa { background-color: #fff7ed; color: #d97706; font-weight: 600; border-left: 4px solid #f59e0b; }
+        .classificacao-neutra { background-color: #eff6ff; color: #3b82f6; font-weight: 600; border-left: 4px solid #60a5fa; }
+        .inf-ad-prod-highlight, .pmc-highlight {
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            margin-top: 3px;
+        }
+        .inf-ad-prod-highlight { background-color: #f0f9ff; color: #1e40af; border: 1px solid #bae6fd; }
+        .pmc-highlight { background-color: #fefce8; color: #a16207; border: 1px solid #fcd34d; }
+        .nfeHeaderRow td {
+            background-color: #e0e7ff !important;
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: #1e40af;
+            border-top: 3px solid #93c5fd;
+            position: sticky;
+            top: 48px;
+            z-index: 15;
+        }
+        #dropArea {
+            border: 3px dashed #93c5fd;
+            background-color: #f0f9ff;
+            transition: all 0.2s ease;
+        }
+        .drag-over {
+            border-color: #3b82f6 !important;
+            background-color: #e0f2fe !important;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+        }
+        @media screen and (max-width: 1600px) {
+            .table-container {
+                overflow-x: auto;
+            }
+        }
+    </style>
 </head>
 <body class="p-4 sm:p-8">
-
-  <h1 class="text-3xl font-extrabold text-gray-800 border-b-4 border-blue-500 pb-2 mb-6 rounded-md flex items-center">
-    Processador de XMLs + Envio Manual para Planilha
-    <span id="loadingSpinner" class="hidden ml-3">
-      <svg class="animate-spin h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-      </svg>
-    </span>
-  </h1>
-
-  <div class="flex flex-col lg:flex-row gap-6 mb-8">
-    <div id="dropArea" class="p-6 shadow-xl rounded-xl border-2 lg:w-1/3 flex flex-col justify-center items-center cursor-pointer hover:border-blue-500 transition-colors">
-      <label for="xmlInput" class="block text-xl font-bold text-gray-700 mb-2">Arraste e Solte XML(s) Aqui</label>
-      <p class="text-sm text-gray-500 mb-4">ou clique para selecionar os arquivos (.xml)</p>
-      <input type="file" id="xmlInput" multiple accept=".xml" class="opacity-0 w-0 h-0 absolute pointer-events-none">
-      <button onclick="document.getElementById('xmlInput').click()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg shadow-md">
-        Selecionar Arquivos
-      </button>
-    </div>
-
-    <div class="bg-white p-6 shadow-xl rounded-xl border border-gray-200 flex-1 flex flex-col gap-4">
-      <h2 class="text-xl font-semibold text-gray-800 border-b pb-2">Filtros e Ações</h2>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div>
-          <label for="textFilter" class="block text-sm font-medium text-gray-600 mb-1">Buscar Produto/EAN:</label>
-          <input type="text" id="textFilter" placeholder="Descrição, EAN, Cód. Forn. ou NF-e" class="w-full border border-gray-300 p-2 rounded-lg focus:ring-blue-500">
-        </div>
-        <div>
-          <label for="classificationFilter" class="block text-sm font-medium text-gray-600 mb-1">Filtrar Classificação:</label>
-          <select id="classificationFilter" class="w-full border border-gray-300 p-2 rounded-lg focus:ring-blue-500 bg-white">
-            <option value="">Todas as Classificações</option>
-            <option value="classificacao-positiva">Lista Positiva</option>
-            <option value="classificacao-negativa">Lista Negativa</option>
-            <option value="classificacao-neutra">Lista Neutra</option>
-            <option value="bg-gray-200">Outras / Verificar</option>
-          </select>
-        </div>
-        <div class="flex gap-2">
-          <button id="exportButton" class="flex-1 py-2 px-4 rounded-lg shadow-md text-sm font-medium text-white bg-green-600 hover:bg-green-700" disabled>
-            Exportar Tabela (.csv)
-          </button>
-          <button id="sendDuplicatasButton" class="flex-1 py-2 px-4 rounded-lg shadow-md text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 flex items-center justify-center" disabled>
-            Enviar Duplicatas
-            <svg id="sendSpinner" class="hidden animate-spin ml-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+    <h1 class="text-3xl font-extrabold text-gray-800 border-b-4 border-blue-500 pb-2 mb-6 rounded-md flex items-center">
+        Processador de XMLs + Envio Manual para Planilha
+        <span id="loadingSpinner" class="hidden ml-3">
+            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
-          </button>
+        </span>
+    </h1>
+
+    <div class="flex flex-col lg:flex-row gap-6 mb-8">
+        <div id="dropArea" class="p-6 shadow-xl rounded-xl border-2 lg:w-1/3 flex flex-col justify-center items-center cursor-pointer hover:border-blue-500 transition-colors duration-150">
+            <label for="xmlInput" class="block text-xl font-bold text-gray-700 mb-2">
+                Arraste e Solte XML(s) Aqui
+            </label>
+            <p class="text-sm text-gray-500 mb-4">ou clique para selecionar os arquivos (.xml)</p>
+            <input type="file" id="xmlInput" multiple accept=".xml" class="opacity-0 w-0 h-0 absolute pointer-events-none">
+            <button onclick="document.getElementById('xmlInput').click()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition-colors duration-150">
+                Selecionar Arquivos
+            </button>
         </div>
-      </div>
+
+        <div class="bg-white p-6 shadow-xl rounded-xl border border-gray-200 flex-1 flex flex-col gap-4">
+            <h2 class="text-xl font-semibold text-gray-800 border-b pb-2">Filtros e Ações</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label for="textFilter" class="block text-sm font-medium text-gray-600 mb-1">Buscar Produto/EAN:</label>
+                    <input type="text" id="textFilter" placeholder="Descrição, EAN, Cód. Forn. ou NF-e" class="w-full border border-gray-300 p-2 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition-shadow">
+                </div>
+                <div>
+                    <label for="classificationFilter" class="block text-sm font-medium text-gray-600 mb-1">Filtrar Classificação:</label>
+                    <select id="classificationFilter" class="w-full border border-gray-300 p-2 rounded-lg focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white">
+                        <option value="">Todas as Classificações</option>
+                        <option value="classificacao-positiva">Lista Positiva</option>
+                        <option value="classificacao-negativa">Lista Negativa (Monofásico)</option>
+                        <option value="classificacao-neutra">Lista Neutra (Regime Geral)</option>
+                        <option value="bg-gray-200">Outras / Verificar</option>
+                    </select>
+                </div>
+                <div class="flex gap-2">
+                    <button id="exportButton" class="flex-1 py-2 px-4 rounded-lg shadow-md text-sm font-medium text-white bg-green-600 hover:bg-green-700" disabled>
+                        Exportar Tabela (.csv)
+                    </button>
+                    <button id="sendDuplicatasButton" class="flex-1 py-2 px-4 rounded-lg shadow-md text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 flex items-center justify-center" disabled>
+                        Enviar Duplicatas
+                        <svg id="sendSpinner" class="hidden animate-spin ml-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
 
-  <div id="fiscalLegend" class="bg-indigo-50 p-5 shadow-inner rounded-xl mb-8 border-l-4 border-indigo-400">
-    <h2 class="text-xl font-semibold text-indigo-800 mb-3">Contexto Fiscal e Legenda</h2>
-    <div class="flex flex-wrap gap-x-6 text-sm text-gray-700">
-      <div class="flex items-center"><span class="h-3 w-3 bg-green-400 rounded-full mr-2"></span> <strong>Positiva:</strong> Isento/Alíquota Zero.</div>
-      <div class="flex items-center"><span class="h-3 w-3 bg-yellow-600 rounded-full mr-2"></span> <strong>Negativa:</strong> Revenda Alíquota Zero (CST 04).</div>
-      <div class="flex items-center"><span class="h-3 w-3 bg-blue-400 rounded-full mr-2"></span> <strong>Neutra:</strong> Crédito/Débito.</div>
+    <div id="fiscalLegend" class="bg-indigo-50 p-5 shadow-inner rounded-xl mb-8 border-l-4 border-indigo-400">
+        <h2 class="text-xl font-semibold text-indigo-800 mb-3">Contexto Fiscal e Legenda</h2>
+        <div class="flex flex-wrap gap-x-6 text-sm text-gray-700">
+            <div class="flex items-center"><span class="h-3 w-3 bg-green-400 rounded-full mr-2"></span> <strong>Positiva:</strong> Isento/Alíquota Zero.</div>
+            <div class="flex items-center"><span class="h-3 w-3 bg-yellow-600 rounded-full mr-2"></span> <strong>Negativa (Monofásico):</strong> Revenda Alíquota Zero (CST 04).</div>
+            <div class="flex items-center"><span class="h-3 w-3 bg-blue-400 rounded-full mr-2"></span> <strong>Neutra (Regime Geral):</strong> Crédito/Débito.</div>
+        </div>
     </div>
-  </div>
 
-  <div id="messageArea" class="mb-6"></div>
-  <div id="resultsArea">
-    <p class="text-gray-600 text-center py-8">Aguardando XMLs...</p>
-  </div>
-
-  <div id="paginationArea" class="mt-4 flex justify-between items-center hidden">
-    <p id="paginationSummary" class="text-sm text-gray-700"></p>
-    <div class="flex space-x-2">
-      <button id="prevPage" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50" disabled>Anterior</button>
-      <button id="nextPage" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50" disabled>Próxima</button>
+    <div id="messageArea" class="mb-6"></div>
+    <div id="resultsArea">
+        <p class="text-gray-600 text-center py-8">Aguardando a seleção ou *drag-and-drop* dos arquivos XML...</p>
     </div>
-  </div>
 
-  <script>
-    // === CONFIGURAÇÃO ===
-    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzbeawKlm7s0Dl8ok-2AXUepTb0JG_2a7F1qQ3OLZw-mHIMVbgMq3dpXp1E8jwQ7-glCQ/exec';
+    <div id="paginationArea" class="mt-4 flex justify-between items-center hidden">
+        <p id="paginationSummary" class="text-sm text-gray-700"></p>
+        <div class="flex space-x-2">
+            <button id="prevPage" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50" disabled>Página Anterior</button>
+            <button id="nextPage" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50" disabled>Próxima Página</button>
+        </div>
+    </div>
 
-    // === DOM ===
-    const xmlInput = document.getElementById('xmlInput');
-    const textFilter = document.getElementById('textFilter');
-    const classificationFilter = document.getElementById('classificationFilter');
-    const exportButton = document.getElementById('exportButton');
-    const sendDuplicatasButton = document.getElementById('sendDuplicatasButton');
-    const sendSpinner = document.getElementById('sendSpinner');
-    const resultsArea = document.getElementById('resultsArea');
-    const messageArea = document.getElementById('messageArea');
-    const dropArea = document.getElementById('dropArea');
-    const loadingSpinner = document.getElementById('loadingSpinner');
-    const paginationArea = document.getElementById('paginationArea');
-    const paginationSummary = document.getElementById('paginationSummary');
-    const prevPageButton = document.getElementById('prevPage');
-    const nextPageButton = document.getElementById('nextPage');
+    <script>
+        // === CONFIGURAÇÃO ===
+        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzbeawKlm7s0Dl8ok-2AXUepTb0JG_2a7F1qQ3OLZw-mHIMVbgMq3dpXp1E8jwQ7-glCQ/exec';
 
-    // === ESTADO ===
-    const parser = new DOMParser();
-    let allProductsData = [];
-    let filteredProductsData = [];
-    let currentPage = 1;
-    const itemsPerPage = 15;
-    let currentSort = { column: 'xProd', direction: 'asc' };
-    let duplicatasParaEnviar = [];
+        // === DOM Elements ===
+        const xmlInput = document.getElementById('xmlInput');
+        const textFilter = document.getElementById('textFilter');
+        const classificationFilter = document.getElementById('classificationFilter');
+        const exportButton = document.getElementById('exportButton');
+        const sendDuplicatasButton = document.getElementById('sendDuplicatasButton');
+        const sendSpinner = document.getElementById('sendSpinner');
+        const resultsArea = document.getElementById('resultsArea');
+        const messageArea = document.getElementById('messageArea');
+        const dropArea = document.getElementById('dropArea');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const paginationArea = document.getElementById('paginationArea');
+        const paginationSummary = document.getElementById('paginationSummary');
+        const prevPageButton = document.getElementById('prevPage');
+        const nextPageButton = document.getElementById('nextPage');
 
-    // === MAPEAMENTOS FISCAIS ===
-    const CSOSN_MEANINGS = { '00': 'Tributada integralmente', '40': 'Isenta', '41': 'Não tributada', '101': 'Tributada SN com crédito', '102': 'Tributada SN sem crédito', '300': 'Imune', '400': 'Não tributada', '500': 'ST anterior', '900': 'Outros' };
-    const PIS_COFINS_MEANINGS = { '01': 'Tributável Básica', '04': 'Monofásica – Revenda Zero', '06': 'Alíquota Zero', '07': 'Isenta', '08': 'Sem Incidência', '09': 'Suspensa' };
+        // === Estado Global ===
+        const parser = new DOMParser();
+        let allProductsData = [];
+        let filteredProductsData = [];
+        let currentPage = 1;
+        const itemsPerPage = 15;
+        let currentSort = { column: 'xProd', direction: 'asc' };
+        let duplicatasParaEnviar = [];
 
-    // === FUNÇÕES ===
-    function displayMessage(type, text) {
-      const icons = { success: 'CheckCircle', error: 'XCircle', warning: 'AlertTriangle', info: 'AlertTriangle' };
-      const colors = { success: 'bg-green-100 text-green-800 border-green-300', error: 'bg-red-100 text-red-800 border-red-300', warning: 'bg-yellow-100 text-yellow-800 border-yellow-300', info: 'bg-blue-100 text-blue-800 border-blue-300' };
-      messageArea.innerHTML += `<div class="flex items-center p-3 mb-2 rounded-lg ${colors[type]} border"><span class="mr-2 font-bold">${icons[type]}</span> ${text}</div>`;
-      messageArea.scrollTop = messageArea.scrollHeight;
-    }
+        // === Mapeamentos Fiscais ===
+        const CSOSN_MEANINGS = {
+            '00': 'CST - Tributada integralmente', '10': 'CST - Tributada e com ST', '20': 'CST - Com redução da Base de Cálculo',
+            '30': 'CST - Isenta / Não tributada e com ST', '40': 'CST - Isenta', '41': 'CST - Não tributada',
+            '50': 'CST - Com suspensão', '51': 'CST - Com diferimento', '60': 'CST - ICMS cobrado por ST (Substituído)',
+            '70': 'CST - Com redução da BC e cobrança do ICMS por ST', '90': 'CST - Outras',
+            '101': 'CSOSN - Tributada SN com permissão de crédito', '102': 'CSOSN - Tributada SN sem permissão de crédito',
+            '103': 'CSOSN - Isenção ICMS SN para faixa de receita bruta', '201': 'CSOSN - Tributada SN com crédito e ICMS cobrado por ST',
+            '202': 'CSOSN - Tributada SN sem crédito e ICMS cobrado por ST', '203': 'CSOSN - Isenção ICMS SN para faixa de receita bruta e com cobrança do ICMS por ST',
+            '300': 'CSOSN - Imune (Produto Imune ao ICMS)', '400': 'CSOSN - Não tributada (Isenção legal ICMS/Remessa)',
+            '500': 'CSOSN - ICMS cobrado anteriormente por ST (Substituído)', '900': 'CSOSN - Outros (demais casos)',
+        };
+        const PIS_COFINS_MEANINGS = {
+            '01': 'Saída: Tributável com Alíquota Básica', '02': 'Saída: Tributável com Alíquota Diferenciada',
+            '03': 'Saída: Tributável por Unidade de Medida', '04': 'Saída: Monofásica – Revenda a Alíquota Zero (Lista Negativa)',
+            '05': 'Saída: Substituição Tributária', '06': 'Saída: Tributável a Alíquota Zero (Lista Positiva)',
+            '07': 'Saída: Operação Isenta da Contribuição (Lista Positiva)', '08': 'Saída: Operação sem Incidência (Imune - Lista Positiva)',
+            '09': 'Saída: Operação com Suspensão da Contribuição (Lista Positiva)', '10': 'Saída: Tributável com Alíquota Zero (Lei Especial)',
+            '49': 'Saída: Outras Operações de Saída',
+            '50': 'Entrada: Crédito Não Cumulativo - Vinculado a Receita Tributada', '51': 'Entrada: Crédito Não Cumulativo - Vinculado a Receita Não Tributada',
+            '52': 'Entrada: Crédito Não Cumulativo - Outras Operações', '53': 'Entrada: Crédito Cumulativo - Vinculado a Receita Tributada',
+            '54': 'Entrada: Crédito Cumulativo - Vinculado a Receita Não Tributada', '55': 'Entrada: Crédito Cumulativo - Outras Operações',
+            '56': 'Entrada: Crédito Presumido - Aquisição de Bens para Revenda', '60': 'Entrada: Crédito Presumido - Outras Operações',
+            '61': 'Entrada: Crédito Presumido - Aquisição de Bens para Revenda', '62': 'Entrada: Crédito Presumido - Outras Operações',
+            '63': 'Entrada: Crédito Presumido - Aquisição de Bens para Revenda', '64': 'Entrada: Crédito Presumido - Outras Operações',
+            '65': 'Entrada: Crédito Presumido - Aquisição de Bens para Revenda', '66': 'Entrada: Crédito Presumido - Outras Operações',
+            '67': 'Entrada: Crédito Presumido - Aquisição de Bens para Revenda', '70': 'Entrada: Crédito Não Cumulativo - Vinculado a Receita Tributada',
+            '71': 'Entrada: Crédito Não Cumulativo - Vinculado a Receita Não Tributada', '72': 'Entrada: Crédito Não Cumulativo - Outras Operações',
+            '73': 'Entrada: Crédito Cumulativo - Vinculado a Receita Tributada', '74': 'Entrada: Crédito Cumulativo - Vinculado a Receita Não Tributada',
+            '75': 'Entrada: Crédito Cumulativo - Outras Operações', '98': 'Entrada: Outras Operações de Entrada', '99': 'Entrada: Outras Operações de Entrada'
+        };
 
-    // === COLETAR DUPLICATAS ===
-    function coletarDuplicatasDosXMLs() {
-      duplicatasParaEnviar = [];
-      const files = Array.from(xmlInput.files).filter(f => f.name.endsWith('.xml'));
-      if (files.length === 0) return displayMessage('warning', 'Nenhum XML carregado.');
+        // === Funções Auxiliares ===
+        function displayMessage(type, text) {
+            const colors = { success: 'bg-green-100 text-green-800', error: 'bg-red-100 text-red-800', warning: 'bg-yellow-100 text-yellow-800', info: 'bg-blue-100 text-blue-800' };
+            const icons = { success: 'CheckCircle', error: 'XCircle', warning: 'AlertTriangle', info: 'Info' };
+            messageArea.innerHTML += `
+                <div class="flex items-center p-3 mb-2 rounded-lg ${colors[type]} border border-${type === 'success' ? 'green' : type === 'error' ? 'red' : type === 'warning' ? 'yellow' : 'blue'}-300">
+                    <span class="mr-2">${icons[type]}</span> ${text}
+                </div>`;
+            messageArea.scrollTop = messageArea.scrollHeight;
+        }
 
-      let processed = 0;
-      displayMessage('info', `Coletando duplicatas de ${files.length} XML(s)...`);
+        // === COLETAR DUPLICATAS ===
+        function coletarDuplicatasDosXMLs() {
+            duplicatasParaEnviar = [];
+            const files = Array.from(xmlInput.files).filter(f => f.name.endsWith('.xml'));
+            if (files.length === 0) return;
 
-      files.forEach(file => {
-        const reader = new FileReader();
-        reader.onload = e => {
-          const xmlDoc = parser.parseFromString(e.target.result, 'application/xml');
-          const infNFe = xmlDoc.querySelector('infNFe');
-          if (!infNFe) { processed++; return; }
+            let processed = 0;
+            displayMessage('info', `Coletando duplicatas de ${files.length} XML(s)...`);
 
-          const fornecedor = infNFe.querySelector('emit xNome')?.textContent?.trim() || 'N/D';
-          const numero = infNFe.querySelector('ide nNF')?.textContent || 'N/D';
-          const dataNota = (infNFe.querySelector('ide dhEmi')?.textContent || '').split('T')[0];
-          const valorNota = infNFe.querySelector('total ICMSTot vNF')?.textContent || '0.00';
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    const xmlDoc = parser.parseFromString(e.target.result, 'application/xml');
+                    const infNFe = xmlDoc.querySelector('infNFe');
+                    if (!infNFe) { processed++; return; }
 
-          xmlDoc.querySelectorAll('cobr dup').forEach(dup => {
-            const dVenc = (dup.querySelector('dVenc')?.textContent || '').split('T')[0];
-            const vDup = dup.querySelector('vDup')?.textContent || '0.00';
-            duplicatasParaEnviar.push({ fornecedor, numero, dataNota, valorNota, dVenc, vDup });
-          });
+                    const fornecedor = infNFe.querySelector('emit xNome')?.textContent?.trim() || 'N/D';
+                    const numero = infNFe.querySelector('ide nNF')?.textContent || 'N/D';
+                    const dataNota = (infNFe.querySelector('ide dhEmi')?.textContent || '').split('T')[0];
+                    const valorNota = infNFe.querySelector('total ICMSTot vNF')?.textContent || '0.00';
 
-          processed++;
-          if (processed === files.length) {
+                    xmlDoc.querySelectorAll('cobr dup').forEach(dup => {
+                        const dVenc = (dup.querySelector('dVenc')?.textContent || '').split('T')[0];
+                        const vDup = dup.querySelector('vDup')?.textContent || '0.00';
+                        duplicatasParaEnviar.push({ fornecedor, numero, dataNota, valorNota, dVenc, vDup });
+                    });
+
+                    processed++;
+                    if (processed === files.length) {
+                        sendDuplicatasButton.disabled = false;
+                        displayMessage('success', `${duplicatasParaEnviar.length} duplicata(s) prontas. Clique em "Enviar Duplicatas".`);
+                    }
+                };
+                reader.readAsText(file);
+            });
+        }
+
+        // === ENVIAR DUPLICATAS ===
+        async function enviarTodasDuplicatas() {
+            if (duplicatasParaEnviar.length === 0) return displayMessage('error', 'Nenhuma duplicata para enviar.');
+
+            sendDuplicatasButton.disabled = true;
+            sendSpinner.classList.remove('hidden');
+            let success = 0, error = 0;
+
+            for (const dup of duplicatasParaEnviar) {
+                try {
+                    const PROXY_URL = 'https://api.allorigins.win/raw?url=';
+                    const fullUrl = PROXY_URL + encodeURIComponent(WEB_APP_URL);
+                    
+                    const res = await fetch(fullUrl, { 
+                        method: 'POST', 
+                        headers: { 'Content-Type': 'application/json' }, 
+                        body: JSON.stringify(dup) 
+                    });
+                    
+                    const data = await res.json();
+                    if (data.success) success++;
+                    else { error++; displayMessage('error', `NF ${dup.numero}: ${data.error || 'Erro desconhecido'}`); }
+                } catch (e) {
+                    error++; displayMessage('error', `NF ${dup.numero}: Falha na conexão`);
+                }
+            }
+
             sendDuplicatasButton.disabled = false;
-            displayMessage('success', `${duplicatasParaEnviar.length} duplicata(s) prontas. Clique em "Enviar Duplicatas".`);
-          }
-        };
-        reader.readAsText(file);
-      });
-    }
-
-    // === ENVIAR DUPLICATAS (COM PROXY CORS) ===
-    async function enviarTodasDuplicatas() {
-      if (duplicatasParaEnviar.length === 0) return displayMessage('error', 'Nenhuma duplicata para enviar.');
-
-      sendDuplicatasButton.disabled = true;
-      sendSpinner.classList.remove('hidden');
-      let success = 0, error = 0;
-
-      for (const dup of duplicatasParaEnviar) {
-        try {
-          const PROXY_URL = 'https://api.allorigins.win/raw?url=';
-          const fullUrl = PROXY_URL + encodeURIComponent(WEB_APP_URL);
-          
-          const res = await fetch(fullUrl, { 
-            method: 'POST', 
-            headers: { 'Content-Type': 'application/json' }, 
-            body: JSON.stringify(dup) 
-          });
-          
-          const data = await res.json();
-          if (data.success) success++;
-          else { error++; displayMessage('error', `NF ${dup.numero}: ${data.error || 'Erro desconhecido'}`); }
-        } catch (e) {
-          error++; displayMessage('error', `NF ${dup.numero}: Falha na conexão`);
-        }
-      }
-
-      sendDuplicatasButton.disabled = false;
-      sendSpinner.classList.add('hidden');
-      displayMessage('success', `${success} enviada(s), ${error} falha(s).`);
-      duplicatasParaEnviar = [];
-    }
-
-    // === PROCESSAR XML (PRODUTOS) ===
-    function processXML(xmlContent, fileName) {
-      const xmlDoc = parser.parseFromString(xmlContent, 'application/xml');
-      if (xmlDoc.querySelector('parsererror')) return displayMessage('error', `XML inválido: ${fileName}`), [];
-
-      const products = [];
-      const nNF = xmlDoc.querySelector('ide nNF')?.textContent || 'N/D';
-      const xNomeEmit = xmlDoc.querySelector('emit xNome')?.textContent || 'N/D';
-      const cnpjEmit = xmlDoc.querySelector('emit CNPJ')?.textContent || 'N/D';
-
-      xmlDoc.querySelectorAll('det').forEach(det => {
-        const prod = det.querySelector('prod');
-        if (!prod) return;
-
-        const item = {
-          cProd: prod.querySelector('cProd')?.textContent || 'N/D',
-          xProd: prod.querySelector('xProd')?.textContent || 'N/D',
-          codigoBarras: prod.querySelector('cEAN')?.textContent || 'N/D',
-          vUnCom: prod.querySelector('vUnCom')?.textContent || '0.00',
-          vUnComFormatted: parseFloat(prod.querySelector('vUnCom')?.textContent || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
-          nLote: prod.querySelector('nLote')?.textContent || '',
-          qLote: prod.querySelector('qLote')?.textContent || '',
-          dFabFormatted: (prod.querySelector('dFab')?.textContent || '').split('T')[0] || '',
-          dValFormatted: (prod.querySelector('dVal')?.textContent || '').split('T')[0] || '',
-          infAdProd: prod.querySelector('infAdProd')?.textContent || '',
-          vPMCValue: prod.querySelector('vPMC')?.textContent || '',
-          pmcFormatted: prod.querySelector('vPMC')?.textContent ? parseFloat(prod.querySelector('vPMC')?.textContent).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '',
-          icmsCode: (det.querySelector('ICMS CST')?.getAttribute('CST') || det.querySelector('ICMS CSOSN')?.getAttribute('CSOSN') || 'N/D'),
-          icmsMeaning: CSOSN_MEANINGS[det.querySelector('ICMS CST')?.getAttribute('CST') || det.querySelector('ICMS CSOSN')?.getAttribute('CSOSN') || 'N/D'] || 'Não mapeado',
-          pisCST: det.querySelector('PIS CST')?.getAttribute('CST') || 'N/D',
-          cofinsCST: det.querySelector('COFINS CST')?.getAttribute('CST') || 'N/D',
-          pisMeaning: PIS_COFINS_MEANINGS[det.querySelector('PIS CST')?.getAttribute('CST') || 'N/D'] || 'Não mapeado',
-          nNF, xNomeEmit, cnpjEmit,
-          finalClassification: { classification: 'Outras / Verificar', cssClass: 'bg-gray-200', calculatedCstText: '' }
-        };
-
-        if (['06','07','08','09'].includes(item.pisCST)) {
-          item.finalClassification = { classification: 'Lista Positiva', cssClass: 'classificacao-positiva', calculatedCstText: 'Isento/Alíquota Zero' };
-        } else if (item.pisCST === '04') {
-          item.finalClassification = { classification: 'Lista Negativa', cssClass: 'classificacao-negativa', calculatedCstText: 'Revenda Alíquota Zero' };
-        } else if (['01','02','03','49'].includes(item.pisCST)) {
-          item.finalClassification = { classification: 'Lista Neutra', cssClass: 'classificacao-neutra', calculatedCstText: 'Crédito/Débito' };
+            sendSpinner.classList.add('hidden');
+            displayMessage('success', `${success} enviada(s), ${error} falha(s).`);
+            duplicatasParaEnviar = [];
         }
 
-        products.push(item);
-      });
+        // === PROCESSAMENTO DE XML (PRODUTOS) ===
+        function processXML(xmlContent, fileName) {
+            const xmlDoc = parser.parseFromString(xmlContent, 'application/xml');
+            const errorNode = xmlDoc.querySelector('parsererror');
+            if (errorNode) {
+                displayMessage('error', `XML inválido: ${fileName}`);
+                return [];
+            }
+            const productsData = [];
+            const items = xmlDoc.querySelectorAll('det');
+            let nItem = 0;
+            items.forEach(det => {
+                nItem++;
+                const prod = det.querySelector('prod');
+                if (!prod) return;
+                const cProd = prod.querySelector('cProd')?.textContent || 'N/D';
+                const xProd = prod.querySelector('xProd')?.textContent || 'N/D';
+                const codigoBarras = prod.querySelector('cEAN')?.textContent || 'N/D';
+                const vUnCom = prod.querySelector('vUnCom')?.textContent || '0.00';
+                const nLote = prod.querySelector('nLote')?.textContent || '';
+                const qLote = prod.querySelector('qLote')?.textContent || '';
+                const dFab = prod.querySelector('dFab')?.textContent || '';
+                const dVal = prod.querySelector('dVal')?.textContent || '';
+                const infAdProd = prod.querySelector('infAdProd')?.textContent || '';
+                const vPMC = prod.querySelector('vPMC')?.textContent || '';
+                const icms = det.querySelector('ICMS CST, ICMS CSOSN');
+                const icmsCode = icms ? (icms.getAttribute('CST') || icms.getAttribute('CSOSN') || 'N/D') : 'N/D';
+                const icmsMeaning = CSOSN_MEANINGS[icmsCode] || 'Código não mapeado';
+                const pis = det.querySelector('PIS CST');
+                const cofins = det.querySelector('COFINS CST');
+                const pisCST = pis ? pis.getAttribute('CST') || 'N/D' : 'N/D';
+                const cofinsCST = cofins ? cofins.getAttribute('CST') || 'N/D' : 'N/D';
+                const pisMeaning = PIS_COFINS_MEANINGS[pisCST] || 'Código não mapeado';
+                const cofinsMeaning = PIS_COFINS_MEANINGS[cofinsCST] || 'Código não mapeado';
+                let classification = 'bg-gray-200';
+                let classificationText = 'Outras / Verificar';
+                let calculatedCstText = '';
+                if (['00', '10', '20', '30', '40', '41', '50', '51', '60', '70', '90'].includes(icmsCode) && ['06', '07', '08', '09'].includes(pisCST)) {
+                    classification = 'classificacao-positiva';
+                    classificationText = 'Lista Positiva';
+                    calculatedCstText = 'Isento/Alíquota Zero';
+                } else if (pisCST === '04') {
+                    classification = 'classificacao-negativa';
+                    classificationText = 'Lista Negativa (Monofásico)';
+                    calculatedCstText = 'Revenda Alíquota Zero';
+                } else if (['01', '02', '03', '49', '50', '51', '52', '70', '71', '72'].includes(pisCST)) {
+                    classification = 'classificacao-neutra';
+                    classificationText = 'Lista Neutra (Regime Geral)';
+                    calculatedCstText = 'Crédito/Débito';
+                }
+                productsData.push({
+                    nItem, cProd, xProd, codigoBarras, vUnCom, vUnComFormatted: parseFloat(vUnCom).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+                    nLote, qLote, dFabFormatted: dFab ? new Date(dFab).toLocaleDateString('pt-BR') : '', dValFormatted: dVal ? new Date(dVal).toLocaleDateString('pt-BR') : '',
+                    infAdProd, vPMCValue: vPMC, pmcFormatted: vPMC ? parseFloat(vPMC).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '',
+                    icmsCode, icmsMeaning, pisCST, cofinsCST, pisMeaning, cofinsMeaning,
+                    nNF: xmlDoc.querySelector('ide nNF')?.textContent || 'N/D',
+                    xNomeEmit: xmlDoc.querySelector('emit xNome')?.textContent || 'N/D',
+                    cnpjEmit: xmlDoc.querySelector('emit CNPJ')?.textContent || 'N/D',
+                    finalClassification: { classification: classificationText, cssClass: classification, rawClass: classification, calculatedCstText }
+                });
+            });
+            return productsData;
+        }
 
-      return products;
-    }
+        // === Manipulação de Arquivos ===
+        function handleFileSelect(files) {
+            if (!files.length) return;
+            allProductsData = [];
+            let filesProcessed = 0;
+            loadingSpinner.classList.remove('hidden');
+            messageArea.innerHTML = '';
+            Array.from(files).forEach(file => {
+                if (!file.name.endsWith('.xml')) {
+                    displayMessage('error', `Arquivo ignorado: ${file.name} (não é .xml)`);
+                    filesProcessed++;
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const products = processXML(e.target.result, file.name);
+                    allProductsData = allProductsData.concat(products);
+                    filesProcessed++;
+                    if (filesProcessed === files.length) {
+                        loadingSpinner.classList.add('hidden');
+                        if (allProductsData.length > 0) {
+                            displayMessage('success', `${allProductsData.length} produtos carregados de ${files.length} XML(s).`);
+                            updateView();
+                            exportButton.disabled = false;
+                            coletarDuplicatasDosXMLs();
+                        } else {
+                            resultsArea.innerHTML = '<p class="text-gray-600 text-center py-8">Nenhum produto válido encontrado.</p>';
+                        }
+                    }
+                };
+                reader.onerror = () => {
+                    filesProcessed++;
+                    displayMessage('error', `Erro ao ler: ${file.name}`);
+                };
+                reader.readAsText(file);
+            });
+        }
 
-    // === MANIPULAÇÃO DE ARQUIVOS ===
-    function handleFileSelect(files) {
-      if (!files.length) return;
-      allProductsData = [];
-      let processed = 0;
-      loadingSpinner.classList.remove('hidden');
-      messageArea.innerHTML = '';
-
-      Array.from(files).forEach(file => {
-        if (!file.name.endsWith('.xml')) { processed++; return displayMessage('error', `Ignorado: ${file.name}`); }
-        const reader = new FileReader();
-        reader.onload = e => {
-          allProductsData = allProductsData.concat(processXML(e.target.result, file.name));
-          processed++;
-          if (processed === files.length) {
-            loadingSpinner.classList.add('hidden');
-            displayMessage('success', `${allProductsData.length} produtos carregados de ${files.length} XML(s).`);
-            filteredProductsData = [...allProductsData];
+        // === Filtros, Ordenação e Paginação (100% seu original) ===
+        function sortData(column, direction) {
+            filteredProductsData.sort((a, b) => {
+                let aVal = a[column], bVal = b[column];
+                if (typeof aVal === 'string') aVal = aVal.toLowerCase();
+                if (typeof bVal === 'string') bVal = bVal.toLowerCase();
+                return (aVal < bVal ? -1 : 1) * (direction === 'asc' ? 1 : -1);
+            });
+        }
+        function updateView() {
             currentPage = 1;
-            renderTable();
-            updatePagination();
-            exportButton.disabled = false;
-            coletarDuplicatasDosXMLs();
-          }
-        };
-        reader.readAsText(file);
-      });
-    }
-
-    // === TABELA ===
-    function renderTable() {
-      if (filteredProductsData.length === 0) {
-        resultsArea.innerHTML = '<p class="text-gray-600 text-center py-8">Nenhum produto encontrado.</p>';
-        return;
-      }
-
-      const start = (currentPage - 1) * itemsPerPage;
-      const end = start + itemsPerPage;
-      const pageData = filteredProductsData.slice(start, end);
-
-      let html = `
-        <div class="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th onclick="sortTable('cProd')">CÓD. FORN.</th>
-                <th onclick="sortTable('xProd')">DESCRIÇÃO DO PRODUTO</th>
-                <th onclick="sortTable('codigoBarras')">CÓD. BARRAS (EAN)</th>
-                <th onclick="sortTable('vUnCom')">ICMS (CST/CSOSN)</th>
-                <th onclick="sortTable('pisCST')">CST PIS/COFINS</th>
-                <th onclick="sortTable('finalClassification')">CLASSIFICAÇÃO (FORNEC/CST)</th>
-                <th onclick="sortTable('nLote')">LOTE / DATAS</th>
-                <th>V. UNIT.</th>
-                <th>PMC</th>
-              </tr>
-            </thead>
-            <tbody>
-      `;
-
-      let currentNF = '';
-      pageData.forEach(item => {
-        if (item.nNF !== currentNF) {
-          currentNF = item.nNF;
-          html += `<tr class="nfeHeaderRow"><td colspan="9">NF-e: ${item.nNF} | Emitente: ${item.xNomeEmit} (CNPJ: ${item.cnpjEmit})</td></tr>`;
+            applyFiltersAndSort();
+            renderResultsTable();
+        }
+        function applyFiltersAndSort() {
+            const text = textFilter.value.toLowerCase().trim();
+            const classification = classificationFilter.value;
+            filteredProductsData = allProductsData.filter(item => {
+                const searchData = `${item.cProd} ${item.xProd} ${item.codigoBarras} ${item.nNF} ${item.xNomeEmit} ${item.infAdProd} ${item.nLote}`.toLowerCase();
+                const matchesText = !text || searchData.includes(text);
+                const matchesClassification = !classification || item.finalClassification.rawClass === classification;
+                return matchesText && matchesClassification;
+            });
+            sortData(currentSort.column, currentSort.direction);
+            updatePaginationControls();
+        }
+        function renderResultsTable() {
+            resultsArea.innerHTML = '';
+            if (filteredProductsData.length === 0) {
+                resultsArea.innerHTML = '<p class="text-red-500 text-center py-8">Nenhum produto encontrado com os filtros atuais.</p>';
+                paginationArea.classList.add('hidden');
+                return;
+            }
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const dataToRender = filteredProductsData.slice(startIndex, endIndex);
+            let currentNfe = '';
+            const tableContainer = document.createElement('div');
+            tableContainer.className = 'table-container';
+            const table = document.createElement('table');
+            table.className = 'text-left bg-white w-full';
+            const thead = table.createTHead();
+            thead.innerHTML = `
+                <tr class="text-xs uppercase tracking-wider">
+                    <th data-column="cProd">Cód. Forn. ${getSortIcon('cProd')}</th>
+                    <th data-column="xProd">Descrição do Produto ${getSortIcon('xProd')}</th>
+                    <th data-column="codigoBarras">Cód. Barras (EAN) ${getSortIcon('codigoBarras')}</th>
+                    <th>ICMS (CST/CSOSN)</th>
+                    <th>CST PIS/COFINS</th>
+                    <th data-column="finalClassification.rawClass" class="bg-blue-800 text-white">Classificação (Fornec/CST)</th>
+                    <th>Lote / Datas</th>
+                    <th data-column="vUnCom" class="price-cell">Vlr Unit. (R$) ${getSortIcon('vUnCom')}</th>
+                    <th>PMC / Info Adicional</th>
+                </tr>
+            `;
+            table.appendChild(thead);
+            thead.querySelectorAll('th[data-column]').forEach(th => {
+                th.addEventListener('click', () => handleSort(th.getAttribute('data-column')));
+            });
+            const tbody = table.createTBody();
+            dataToRender.forEach(item => {
+                if (item.nNF !== currentNfe) {
+                    const nfeRow = tbody.insertRow();
+                    nfeRow.className = 'nfeHeaderRow';
+                    nfeRow.innerHTML = `<td colspan="10" class="p-3">NF-e: <span class="font-extrabold">${item.nNF}</span> | Emitente: ${item.xNomeEmit} (CNPJ: ${item.cnpjEmit})</td>`;
+                    currentNfe = item.nNF;
+                }
+                const lotContent = `${item.nLote ? `Lote: <span class="font-bold">${item.nLote}</span><br>` : ''}${item.qLote ? `Qtde: ${parseFloat(item.qLote).toFixed(2)}<br>` : ''}${item.dFabFormatted ? `Fab.: ${item.dFabFormatted}<br>` : ''}${item.dValFormatted ? `Val.: ${item.dValFormatted}<br>` : ''}${!item.nLote && !item.qLote ? 'Nenhuma info de lote.' : ''}`;
+                let pmcPmpCellContent = [];
+                if (item.vPMCValue) pmcPmpCellContent.push(`<div class="pmc-highlight" title="vPMC">PMC: R$ ${item.pmcFormatted}</div>`);
+                if (item.infAdProd) pmcPmpCellContent.push(`<div class="inf-ad-prod-highlight" title="Inf Ad Prod">${item.infAdProd}</div>`);
+                const newRow = tbody.insertRow();
+                newRow.className = 'hover:bg-gray-100 transition-colors duration-75';
+                newRow.innerHTML = `
+                    <td>${item.cProd || 'N/D'}</td>
+                    <td>${item.xProd || 'N/D'}</td>
+                    <td>${item.codigoBarras}</td>
+                    <td class="bg-yellow-50">${item.icmsCode} <span class="code-meaning">(${item.icmsMeaning})</span></td>
+                    <td>${item.pisCST}/${item.cofinsCST} <span class="code-meaning">(${item.pisMeaning})</span></td>
+                    <td class="${item.finalClassification.cssClass} text-center font-bold">${item.finalClassification.classification}<span class="code-meaning mt-1 text-xs text-gray-700">(${item.finalClassification.calculatedCstText})</span></td>
+                    <td class="lot-info text-sm">${lotContent}</td>
+                    <td class="text-green-700 price-cell">${item.vUnComFormatted}</td>
+                    <td>${pmcPmpCellContent.length > 0 ? pmcPmpCellContent.join('') : 'N/D'}</td>
+                `;
+            });
+            tableContainer.appendChild(table);
+            resultsArea.appendChild(tableContainer);
+            updatePaginationControls();
+            paginationArea.classList.remove('hidden');
+        }
+        function getSortIcon(column) {
+            return currentSort.column === column ? (currentSort.direction === 'asc' ? ' UpArrow' : ' DownArrow') : ' Diamond';
+        }
+        function handleSort(column) {
+            if (currentSort.column === column) {
+                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort.column = column;
+                currentSort.direction = 'asc';
+            }
+            updateView();
+        }
+        function updatePaginationControls() {
+            const totalItems = filteredProductsData.length;
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+            const startItem = totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0;
+            const endItem = Math.min(currentPage * itemsPerPage, totalItems);
+            paginationSummary.textContent = `Mostrando ${startItem} a ${endItem} de ${totalItems} produtos (Página ${currentPage} de ${totalPages || 1})`;
+            prevPageButton.disabled = currentPage === 1;
+            nextPageButton.disabled = currentPage === totalPages || totalPages === 0;
+        }
+        function goToPage(direction) {
+            const totalPages = Math.ceil(filteredProductsData.length / itemsPerPage);
+            if (direction === 'prev' && currentPage > 1) currentPage--;
+            else if (direction === 'next' && currentPage < totalPages) currentPage++;
+            renderResultsTable();
+            window.scrollTo({ top: resultsArea.offsetTop, behavior: 'smooth' });
+        }
+        function exportTableToCSV() {
+            if (filteredProductsData.length === 0) return displayMessage('error', 'Nada para exportar.');
+            let csv = [];
+            const headers = ['NF-e', 'Fornecedor (Nome)', 'Fornecedor (CNPJ)', 'Cod. Forn.', 'Descricao do Produto', 'Cod. Barras (EAN)', 'ICMS (CST/CSOSN)', 'CST PIS', 'CST COFINS', 'Classificacao Fiscal', 'Valor Unit. (R$)', 'PMC (R$)', 'Lote', 'Qtde Lote', 'Data Fabricacao', 'Data Validade', 'Inf. Adicional Produto'];
+            csv.push(headers.join(';'));
+            filteredProductsData.forEach(item => {
+                const row = [
+                    item.nNF, `"${item.xNomeEmit.replace(/"/g, '""')}"`, item.cnpjEmit, item.cProd, `"${item.xProd.replace(/"/g, '""')}"`, item.codigoBarras,
+                    `${item.icmsCode} - ${item.icmsMeaning}`, `${item.pisCST} - ${item.pisMeaning}`, `${item.cofinsCST} - ${item.cofinsMeaning}`,
+                    item.finalClassification.classification, parseFloat(item.vUnCom).toFixed(2).replace('.', ','), item.vPMCValue ? parseFloat(item.vPMCValue).toFixed(2).replace('.', ',') : '',
+                    item.nLote, item.qLote ? parseFloat(item.qLote).toFixed(2).replace('.', ',') : '', item.dFabFormatted, item.dValFormatted, `"${(item.infAdProd || '').replace(/"/g, '""')}"`
+                ];
+                csv.push(row.join(';'));
+            });
+            const blob = new Blob(["\ufeff", csv.join('\n')], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `produtos_xml_${new Date().toISOString().slice(0,10)}.csv`;
+            link.click();
+            displayMessage('info', 'CSV exportado com sucesso!');
         }
 
-        html += `
-          <tr class="${item.finalClassification.cssClass}">
-            <td>${item.cProd}</td>
-            <td>
-              ${item.xProd}
-              ${item.infAdProd ? `<span class="inf-ad-prod-highlight block">INF AD: ${item.infAdProd}</span>` : ''}
-            </td>
-            <td>${item.codigoBarras}</td>
-            <td>
-              ${item.icmsCode}
-              <span class="code-meaning">${item.icmsMeaning}</span>
-            </td>
-            <td>
-              ${item.pisCST}/${item.cofinsCST}
-              <span class="code-meaning">${item.pisMeaning}</span>
-            </td>
-            <td>
-              ${item.finalClassification.classification}
-              <span class="code-meaning">${item.finalClassification.calculatedCstText}</span>
-            </td>
-            <td>
-              ${item.nLote ? `<span class="lot-info">Lote: ${item.nLote} | Qtd: ${item.qLote}</span><br>` : ''}
-              ${item.dFabFormatted || item.dValFormatted ? `<span class="lot-info">Fab: ${item.dFabFormatted} | Val: ${item.dValFormatted}</span>` : 'N/D'}
-            </td>
-            <td class="price-cell">${item.vUnComFormatted}</td>
-            <td class="price-cell">${item.pmcFormatted || 'N/D'}</td>
-          </tr>
-        `;
-      });
+        // === Eventos ===
+        xmlInput.addEventListener('change', e => handleFileSelect(e.target.files));
+        textFilter.addEventListener('input', updateView);
+        classificationFilter.addEventListener('change', updateView);
+        exportButton.addEventListener('click', exportTableToCSV);
+        prevPageButton.addEventListener('click', () => goToPage('prev'));
+        nextPageButton.addEventListener('click', () => goToPage('next'));
+        sendDuplicatasButton.addEventListener('click', enviarTodasDuplicatas);
 
-      html += `</tbody></table></div>`;
-      resultsArea.innerHTML = html;
-    }
-
-    // === ORDENAÇÃO ===
-    function sortTable(column) {
-      const dir = currentSort.column === column && currentSort.direction === 'asc' ? 'desc' : 'asc';
-      currentSort = { column, direction: dir };
-
-      filteredProductsData.sort((a, b) => {
-        let x = a[column], y = b[column];
-        if (typeof x === 'string') x = x.toLowerCase();
-        if (typeof y === 'string') y = y.toLowerCase();
-        return (x < y ? -1 : x > y ? 1 : 0) * (dir === 'asc' ? 1 : -1);
-      });
-
-      renderTable();
-    }
-
-    // === FILTROS ===
-    textFilter.addEventListener('input', applyFilters);
-    classificationFilter.addEventListener('change', applyFilters);
-
-    function applyFilters() {
-      const text = textFilter.value.toLowerCase();
-      const classFilter = classificationFilter.value;
-
-      filteredProductsData = allProductsData.filter(item => {
-        const matchesText = item.xProd.toLowerCase().includes(text) ||
-                            item.codigoBarras.includes(text) ||
-                            item.cProd.includes(text) ||
-                            item.nNF.includes(text);
-        const matchesClass = !classFilter || item.finalClassification.cssClass === classFilter;
-        return matchesText && matchesClass;
-      });
-
-      currentPage = 1;
-      renderTable();
-      updatePagination();
-    }
-
-    // === PAGINAÇÃO ===
-    function updatePagination() {
-      const totalPages = Math.ceil(filteredProductsData.length / itemsPerPage);
-      paginationSummary.textContent = `Página ${currentPage} de ${totalPages} (${filteredProductsData.length} itens)`;
-      prevPageButton.disabled = currentPage === 1;
-      nextPageButton.disabled = currentPage === totalPages;
-      paginationArea.classList.toggle('hidden', totalPages <= 1);
-    }
-
-    prevPageButton.addEventListener('click', () => { currentPage--; renderTable(); updatePagination(); });
-    nextPageButton.addEventListener('click', () => { currentPage++; renderTable(); updatePagination(); });
-
-    // === EXPORTAÇÃO CSV ===
-    exportButton.addEventListener('click', () => {
-      const headers = ['CÓD. FORN.', 'DESCRIÇÃO', 'EAN', 'ICMS', 'PIS/COFINS', 'CLASSIFICAÇÃO', 'LOTE/DATAS', 'V. UNIT.', 'PMC', 'NF-e', 'EMITENTE', 'CNPJ'];
-      const rows = filteredProductsData.map(item => [
-        item.cProd, item.xProd, item.codigoBarras, item.icmsCode, `${item.pisCST}/${item.cofinsCST}`,
-        item.finalClassification.classification, `${item.nLote ? 'Lote: ' + item.nLote : ''} Fab: ${item.dFabFormatted} Val: ${item.dValFormatted}`,
-        item.vUnCom, item.vPMCValue || '', item.nNF, item.xNomeEmit, item.cnpjEmit
-      ]);
-
-      const csv = [headers, ...rows].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
-      const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url; link.download = `produtos_nfe_${new Date().toISOString().slice(0,10)}.csv`;
-      link.click();
-    });
-
-    // === EVENTOS ===
-    xmlInput.addEventListener('change', e => handleFileSelect(e.target.files));
-    sendDuplicatasButton.addEventListener('click', enviarTodasDuplicatas);
-
-    // Drag & Drop
-    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(ev => dropArea.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); }));
-    ['dragenter', 'dragover'].forEach(ev => dropArea.addEventListener(ev, () => dropArea.classList.add('drag-over')));
-    ['dragleave', 'drop'].forEach(ev => dropArea.addEventListener(ev, () => dropArea.classList.remove('drag-over')));
-    dropArea.addEventListener('drop', e => handleFileSelect(e.dataTransfer.files));
-  </script>
+        // Drag and Drop
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(event => dropArea.addEventListener(event, e => { e.preventDefault(); e.stopPropagation(); }, false));
+        ['dragenter', 'dragover'].forEach(event => dropArea.addEventListener(event, () => dropArea.classList.add('drag-over'), false));
+        ['dragleave', 'drop'].forEach(event => dropArea.addEventListener(event, () => dropArea.classList.remove('drag-over'), false));
+        dropArea.addEventListener('drop', e => handleFileSelect(e.dataTransfer.files));
+    </script>
 </body>
 </html>
