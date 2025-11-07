@@ -143,8 +143,9 @@
 
     // === FUNÇÕES ===
     function displayMessage(type, text) {
-      const colors = { success: 'bg-green-100 text-green-800', error: 'bg-red-100 text-red-800', warning: 'bg-yellow-100 text-yellow-800', info: 'bg-blue-100 text-blue-800' };
-      messageArea.innerHTML += `<div class="flex items-center p-3 mb-2 rounded-lg ${colors[type]} border border-${type}-300"><span class="mr-2">${type === 'success' ? 'CheckCircle' : type === 'error' ? 'XCircle' : 'AlertTriangle'}</span> ${text}</div>`;
+      const icons = { success: 'CheckCircle', error: 'XCircle', warning: 'AlertTriangle', info: 'AlertTriangle' };
+      const colors = { success: 'bg-green-100 text-green-800 border-green-300', error: 'bg-red-100 text-red-800 border-red-300', warning: 'bg-yellow-100 text-yellow-800 border-yellow-300', info: 'bg-blue-100 text-blue-800 border-blue-300' };
+      messageArea.innerHTML += `<div class="flex items-center p-3 mb-2 rounded-lg ${colors[type]} border"><span class="mr-2 font-bold">${icons[type]}</span> ${text}</div>`;
       messageArea.scrollTop = messageArea.scrollHeight;
     }
 
@@ -155,8 +156,6 @@
       if (files.length === 0) return displayMessage('warning', 'Nenhum XML carregado.');
 
       let processed = 0;
-      sendDuplicatasButton.disabled = true;
-      sendSpinner.classList.remove('hidden');
       displayMessage('info', `Coletando duplicatas de ${files.length} XML(s)...`);
 
       files.forEach(file => {
@@ -180,7 +179,6 @@
           processed++;
           if (processed === files.length) {
             sendDuplicatasButton.disabled = false;
-            sendSpinner.classList.add('hidden');
             displayMessage('success', `${duplicatasParaEnviar.length} duplicata(s) prontas. Clique em "Enviar Duplicatas".`);
           }
         };
@@ -208,7 +206,8 @@
           });
           
           const data = await res.json();
-          data.success ? success++ : (error++, displayMessage('error', `NF ${dup.numero}: ${data.error || 'Erro desconhecido'}`));
+          if (data.success) success++;
+          else { error++; displayMessage('error', `NF ${dup.numero}: ${data.error || 'Erro desconhecido'}`); }
         } catch (e) {
           error++; displayMessage('error', `NF ${dup.numero}: Falha na conexão`);
         }
@@ -226,6 +225,10 @@
       if (xmlDoc.querySelector('parsererror')) return displayMessage('error', `XML inválido: ${fileName}`), [];
 
       const products = [];
+      const nNF = xmlDoc.querySelector('ide nNF')?.textContent || 'N/D';
+      const xNomeEmit = xmlDoc.querySelector('emit xNome')?.textContent || 'N/D';
+      const cnpjEmit = xmlDoc.querySelector('emit CNPJ')?.textContent || 'N/D';
+
       xmlDoc.querySelectorAll('det').forEach(det => {
         const prod = det.querySelector('prod');
         if (!prod) return;
@@ -243,14 +246,12 @@
           infAdProd: prod.querySelector('infAdProd')?.textContent || '',
           vPMCValue: prod.querySelector('vPMC')?.textContent || '',
           pmcFormatted: prod.querySelector('vPMC')?.textContent ? parseFloat(prod.querySelector('vPMC')?.textContent).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '',
-          icmsCode: (det.querySelector('ICMS CST, ICMS CSOSN')?.getAttribute('CST') || det.querySelector('ICMS CST, ICMS CSOSN')?.getAttribute('CSOSN') || 'N/D'),
-          icmsMeaning: CSOSN_MEANINGS[det.querySelector('ICMS CST, ICMS CSOSN')?.getAttribute('CST') || det.querySelector('ICMS CST, ICMS CSOSN')?.getAttribute('CSOSN') || 'N/D'] || 'Não mapeado',
+          icmsCode: (det.querySelector('ICMS CST')?.getAttribute('CST') || det.querySelector('ICMS CSOSN')?.getAttribute('CSOSN') || 'N/D'),
+          icmsMeaning: CSOSN_MEANINGS[det.querySelector('ICMS CST')?.getAttribute('CST') || det.querySelector('ICMS CSOSN')?.getAttribute('CSOSN') || 'N/D'] || 'Não mapeado',
           pisCST: det.querySelector('PIS CST')?.getAttribute('CST') || 'N/D',
           cofinsCST: det.querySelector('COFINS CST')?.getAttribute('CST') || 'N/D',
           pisMeaning: PIS_COFINS_MEANINGS[det.querySelector('PIS CST')?.getAttribute('CST') || 'N/D'] || 'Não mapeado',
-          nNF: xmlDoc.querySelector('ide nNF')?.textContent || 'N/D',
-          xNomeEmit: xmlDoc.querySelector('emit xNome')?.textContent || 'N/D',
-          cnpjEmit: xmlDoc.querySelector('emit CNPJ')?.textContent || 'N/D',
+          nNF, xNomeEmit, cnpjEmit,
           finalClassification: { classification: 'Outras / Verificar', cssClass: 'bg-gray-200', calculatedCstText: '' }
         };
 
@@ -284,8 +285,11 @@
           processed++;
           if (processed === files.length) {
             loadingSpinner.classList.add('hidden');
-            displayMessage('success', `${allProductsData.length} produtos carregados.`);
-            updateView();
+            displayMessage('success', `${allProductsData.length} produtos carregados de ${files.length} XML(s).`);
+            filteredProductsData = [...allProductsData];
+            currentPage = 1;
+            renderTable();
+            updatePagination();
             exportButton.disabled = false;
             coletarDuplicatasDosXMLs();
           }
@@ -294,12 +298,142 @@
       });
     }
 
-    // === FILTROS, ORDENAÇÃO, TABELA, PAGINAÇÃO, EXPORTAÇÃO (mantido igual) ===
-    function updateView() {
-      // Implementação completa de filtro, ordenação, tabela e paginação
-      // (Omitida aqui por brevidade — use a versão anterior que já funcionava)
-      // Inclua aqui o código de renderização da tabela, filtros, exportação CSV, etc.
+    // === TABELA ===
+    function renderTable() {
+      if (filteredProductsData.length === 0) {
+        resultsArea.innerHTML = '<p class="text-gray-600 text-center py-8">Nenhum produto encontrado.</p>';
+        return;
+      }
+
+      const start = (currentPage - 1) * itemsPerPage;
+      const end = start + itemsPerPage;
+      const pageData = filteredProductsData.slice(start, end);
+
+      let html = `
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th onclick="sortTable('cProd')">CÓD. FORN.</th>
+                <th onclick="sortTable('xProd')">DESCRIÇÃO DO PRODUTO</th>
+                <th onclick="sortTable('codigoBarras')">CÓD. BARRAS (EAN)</th>
+                <th onclick="sortTable('vUnCom')">ICMS (CST/CSOSN)</th>
+                <th onclick="sortTable('pisCST')">CST PIS/COFINS</th>
+                <th onclick="sortTable('finalClassification')">CLASSIFICAÇÃO (FORNEC/CST)</th>
+                <th onclick="sortTable('nLote')">LOTE / DATAS</th>
+                <th>V. UNIT.</th>
+                <th>PMC</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+
+      let currentNF = '';
+      pageData.forEach(item => {
+        if (item.nNF !== currentNF) {
+          currentNF = item.nNF;
+          html += `<tr class="nfeHeaderRow"><td colspan="9">NF-e: ${item.nNF} | Emitente: ${item.xNomeEmit} (CNPJ: ${item.cnpjEmit})</td></tr>`;
+        }
+
+        html += `
+          <tr class="${item.finalClassification.cssClass}">
+            <td>${item.cProd}</td>
+            <td>
+              ${item.xProd}
+              ${item.infAdProd ? `<span class="inf-ad-prod-highlight block">INF AD: ${item.infAdProd}</span>` : ''}
+            </td>
+            <td>${item.codigoBarras}</td>
+            <td>
+              ${item.icmsCode}
+              <span class="code-meaning">${item.icmsMeaning}</span>
+            </td>
+            <td>
+              ${item.pisCST}/${item.cofinsCST}
+              <span class="code-meaning">${item.pisMeaning}</span>
+            </td>
+            <td>
+              ${item.finalClassification.classification}
+              <span class="code-meaning">${item.finalClassification.calculatedCstText}</span>
+            </td>
+            <td>
+              ${item.nLote ? `<span class="lot-info">Lote: ${item.nLote} | Qtd: ${item.qLote}</span><br>` : ''}
+              ${item.dFabFormatted || item.dValFormatted ? `<span class="lot-info">Fab: ${item.dFabFormatted} | Val: ${item.dValFormatted}</span>` : 'N/D'}
+            </td>
+            <td class="price-cell">${item.vUnComFormatted}</td>
+            <td class="price-cell">${item.pmcFormatted || 'N/D'}</td>
+          </tr>
+        `;
+      });
+
+      html += `</tbody></table></div>`;
+      resultsArea.innerHTML = html;
     }
+
+    // === ORDENAÇÃO ===
+    function sortTable(column) {
+      const dir = currentSort.column === column && currentSort.direction === 'asc' ? 'desc' : 'asc';
+      currentSort = { column, direction: dir };
+
+      filteredProductsData.sort((a, b) => {
+        let x = a[column], y = b[column];
+        if (typeof x === 'string') x = x.toLowerCase();
+        if (typeof y === 'string') y = y.toLowerCase();
+        return (x < y ? -1 : x > y ? 1 : 0) * (dir === 'asc' ? 1 : -1);
+      });
+
+      renderTable();
+    }
+
+    // === FILTROS ===
+    textFilter.addEventListener('input', applyFilters);
+    classificationFilter.addEventListener('change', applyFilters);
+
+    function applyFilters() {
+      const text = textFilter.value.toLowerCase();
+      const classFilter = classificationFilter.value;
+
+      filteredProductsData = allProductsData.filter(item => {
+        const matchesText = item.xProd.toLowerCase().includes(text) ||
+                            item.codigoBarras.includes(text) ||
+                            item.cProd.includes(text) ||
+                            item.nNF.includes(text);
+        const matchesClass = !classFilter || item.finalClassification.cssClass === classFilter;
+        return matchesText && matchesClass;
+      });
+
+      currentPage = 1;
+      renderTable();
+      updatePagination();
+    }
+
+    // === PAGINAÇÃO ===
+    function updatePagination() {
+      const totalPages = Math.ceil(filteredProductsData.length / itemsPerPage);
+      paginationSummary.textContent = `Página ${currentPage} de ${totalPages} (${filteredProductsData.length} itens)`;
+      prevPageButton.disabled = currentPage === 1;
+      nextPageButton.disabled = currentPage === totalPages;
+      paginationArea.classList.toggle('hidden', totalPages <= 1);
+    }
+
+    prevPageButton.addEventListener('click', () => { currentPage--; renderTable(); updatePagination(); });
+    nextPageButton.addEventListener('click', () => { currentPage++; renderTable(); updatePagination(); });
+
+    // === EXPORTAÇÃO CSV ===
+    exportButton.addEventListener('click', () => {
+      const headers = ['CÓD. FORN.', 'DESCRIÇÃO', 'EAN', 'ICMS', 'PIS/COFINS', 'CLASSIFICAÇÃO', 'LOTE/DATAS', 'V. UNIT.', 'PMC', 'NF-e', 'EMITENTE', 'CNPJ'];
+      const rows = filteredProductsData.map(item => [
+        item.cProd, item.xProd, item.codigoBarras, item.icmsCode, `${item.pisCST}/${item.cofinsCST}`,
+        item.finalClassification.classification, `${item.nLote ? 'Lote: ' + item.nLote : ''} Fab: ${item.dFabFormatted} Val: ${item.dValFormatted}`,
+        item.vUnCom, item.vPMCValue || '', item.nNF, item.xNomeEmit, item.cnpjEmit
+      ]);
+
+      const csv = [headers, ...rows].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+      const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url; link.download = `produtos_nfe_${new Date().toISOString().slice(0,10)}.csv`;
+      link.click();
+    });
 
     // === EVENTOS ===
     xmlInput.addEventListener('change', e => handleFileSelect(e.target.files));
