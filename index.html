@@ -286,7 +286,7 @@
 
             for (const dup of duplicatasParaEnviar) {
                 try {
-                    const PROXY_URL = 'https://corsproxy.io/?';
+                const PROXY_URL = 'https://cors.sh/?url=';
                     const fullUrl = PROXY_URL + encodeURIComponent(WEB_APP_URL);
 
                     const res = await fetch(fullUrl, {
@@ -574,3 +574,4 @@
     </script>
 </body>
 </html>
+
