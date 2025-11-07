@@ -220,7 +220,7 @@
             '56': 'Entrada: Crédito Presumido - Aquisição de Bens para Revenda', '60': 'Entrada: Crédito Presumido - Outras Operações',
             '61': 'Entrada: Crédito Presumido - Aquisição de Bens para Revenda', '62': 'Entrada: Crédito Presumido - Outras Operações',
             '63': 'Entrada: Crédito Presumido - Aquisição de Bens para Revenda', '64': 'Entrada: Crédito Presumido - Outras Operações',
-            '65': 'Entrada: Crédito Presumido - Aquisição de Bens para Revenda', '66': 'Entrada: Crédito Presumido - Outras Operações',
+            '65': 'Entrada: Crédito Presumido - Aquisição de Bens para Revenda', '66': 'Entrada: Crédito Presumido - Aquisição de Bens para Revenda',
             '67': 'Entrada: Crédito Presumido - Aquisição de Bens para Revenda', '70': 'Entrada: Crédito Não Cumulativo - Vinculado a Receita Tributada',
             '71': 'Entrada: Crédito Não Cumulativo - Vinculado a Receita Não Tributada', '72': 'Entrada: Crédito Não Cumulativo - Outras Operações',
             '73': 'Entrada: Crédito Cumulativo - Vinculado a Receita Tributada', '74': 'Entrada: Crédito Cumulativo - Vinculado a Receita Não Tributada',
@@ -230,18 +230,29 @@
         // === Funções Auxiliares ===
         function displayMessage(type, text) {
             const colors = { success: 'bg-green-100 text-green-800', error: 'bg-red-100 text-red-800', warning: 'bg-yellow-100 text-yellow-800', info: 'bg-blue-100 text-blue-800' };
+            const iconMapping = {
+                success: '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>',
+                error: '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" /></svg>',
+                warning: '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.353 2.709-1.353 3.474 0l5.882 10.364C18.47 14.855 17.158 17 15.556 17H4.444C2.842 17 1.53 14.855 2.155 13.463l5.882-10.364zM10 13a1 1 0 100-2 1 1 0 000 2zm-1-6a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" clip-rule="evenodd" /></svg>',
+                info: '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>'
+            };
+
             messageArea.innerHTML += `
                 <div class="flex items-center p-3 mb-2 rounded-lg ${colors[type]} border border-${type === 'success' ? 'green' : type === 'error' ? 'red' : type === 'warning' ? 'yellow' : 'blue'}-300">
-                    <span class="mr-2">${type === 'success' ? 'CheckCircle' : type === 'error' ? 'XCircle' : type === 'warning' ? 'AlertTriangle' : 'Info'}</span> ${text}
+                    <span class="mr-2">${iconMapping[type]}</span> ${text}
                 </div>`;
-            messageArea.scrollTop = messageArea.scrollHeight;
+            messageArea.scrollTop = messageArea.scrollHeight; // Scroll to bottom to show latest message
         }
 
         // === COLETAR DUPLICATAS ===
         function coletarDuplicatasDosXMLs() {
             duplicatasParaEnviar = [];
             const files = Array.from(xmlInput.files).filter(f => f.name.endsWith('.xml'));
-            if (files.length === 0) return;
+            if (files.length === 0) {
+                // If no XMLs are selected, disable the button and return
+                sendDuplicatasButton.disabled = true;
+                return;
+            }
 
             let processed = 0;
             displayMessage('info', `Coletando duplicatas de ${files.length} XML(s)...`);
@@ -267,67 +278,83 @@
                     processed++;
                     if (processed === files.length) {
                         sendDuplicatasButton.disabled = false;
-                        displayMessage('success', `${duplicatasParaEnviar.length} duplicata(s) prontas. Clique em "Enviar Duplicatas".`);
+                        if (duplicatasParaEnviar.length > 0) {
+                            displayMessage('success', `${duplicatasParaEnviar.length} duplicata(s) prontas para envio. Clique em "Enviar Duplicatas".`);
+                        } else {
+                            displayMessage('info', 'Nenhuma duplicata encontrada nos XMLs processados.');
+                            sendDuplicatasButton.disabled = true;
+                        }
+                    }
+                };
+                reader.onerror = () => {
+                    processed++;
+                    displayMessage('error', `Erro ao ler XML para coletar duplicatas: ${file.name}`);
+                    if (processed === files.length) {
+                         sendDuplicatasButton.disabled = duplicatasParaEnviar.length === 0;
                     }
                 };
                 reader.readAsText(file);
             });
         }
 
-        // === ENVIAR DUPLICATAS (COM allorigins.win VIA GET + contents) ===
-        // === ENVIAR DUPLICATAS (COM corsproxy.io VIA GET + contents) ===
-async function enviarTodasDuplicatas() {
-    if (duplicatasParaEnviar.length === 0) {
-        return displayMessage('error', 'Nenhuma duplicata para enviar.');
-    }
-
-    sendDuplicatasButton.disabled = true;
-    sendSpinner.classList.remove('hidden');
-    let success = 0, error = 0;
-
-    for (const dup of duplicatasParaEnviar) {
-        try {
-            const params = new URLSearchParams();
-            params.append('url', WEB_APP_URL);
-            params.append('contents', JSON.stringify(dup));
-
-            const fullUrl = `https://corsproxy.io/?${params.toString()}`;
-
-            const res = await fetch(fullUrl);
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-            const text = await res.text();
-            let result;
-            try {
-                result = JSON.parse(text);
-            } catch (e) {
-                throw new Error(`Resposta inválida: ${text.substring(0, 100)}`);
+        // === ENVIAR DUPLICATAS (COM corsproxy.io VIA POST) ===
+        async function enviarTodasDuplicatas() {
+            if (duplicatasParaEnviar.length === 0) {
+                displayMessage('warning', 'Nenhuma duplicata para enviar.');
+                return;
             }
 
-            if (result.success) {
-                success++;
-                displayMessage('success', `NF ${dup.numero}: Enviada!`);
-            } else {
-                error++;
-                displayMessage('error', `NF ${dup.numero}: ${result.error}`);
-            }
-        } catch (e) {
-            error++;
-            displayMessage('error', `NF ${dup.numero}: ${e.message}`);
-        }
-    }
+            sendDuplicatasButton.disabled = true;
+            sendSpinner.classList.remove('hidden');
+            let success = 0, error = 0;
 
-    sendDuplicatasButton.disabled = false;
-    sendSpinner.classList.add('hidden');
-    displayMessage('success', `Concluído: ${success} OK, ${error} falhas.`);
-    duplicatasParaEnviar = [];
-}
+            for (const dup of duplicatasParaEnviar) {
+                try {
+                    // A URL para o corsproxy.io que irá redirecionar a requisição POST para o WEB_APP_URL
+                    const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(WEB_APP_URL)}`;
+
+                    const res = await fetch(proxyUrl, {
+                        method: 'POST', // Define o método da requisição como POST
+                        headers: {
+                            'Content-Type': 'application/json' // Informa que o corpo da requisição é JSON
+                        },
+                        body: JSON.stringify(dup) // Envia o objeto duplicata como um JSON no corpo da requisição
+                    });
+
+                    if (!res.ok) {
+                        // Tenta ler o texto de erro da resposta do proxy ou do Apps Script
+                        const errorText = await res.text();
+                        throw new Error(`Erro HTTP ${res.status}: ${errorText.substring(0, 200)}`);
+                    }
+
+                    const text = await res.text();
+                    let result;
+                    try {
+                        result = JSON.parse(text);
+                    } catch (e) {
+                        // Se o Apps Script retornar algo que não seja JSON, isso será tratado aqui
+                        throw new Error(`Resposta inválida do Apps Script: ${text.substring(0, 100)}`);
+                    }
+
+                    if (result.success) {
+                        success++;
+                        displayMessage('success', `NF ${dup.numero}: Duplicata enviada com sucesso!`);
+                    } else {
+                        error++;
+                        displayMessage('error', `NF ${dup.numero}: Falha no envio: ${result.error || 'Erro desconhecido'}`);
+                    }
+                } catch (e) {
+                    error++;
+                    displayMessage('error', `Falha ao enviar NF ${dup.numero}: ${e.message}`);
+                }
+            }
 
             sendDuplicatasButton.disabled = false;
             sendSpinner.classList.add('hidden');
-            displayMessage('success', `Concluído: ${success} OK, ${error} falhas.`);
-            duplicatasParaEnviar = [];
+            displayMessage('info', `Envio concluído: ${success} duplicata(s) enviadas, ${error} falha(s).`);
+            duplicatasParaEnviar = []; // Limpa a fila após a tentativa de envio
         }
+
 
         // === PROCESSAMENTO DE XML (PRODUTOS) ===
         function processXML(xmlContent, fileName) {
@@ -399,33 +426,55 @@ async function enviarTodasDuplicatas() {
             allProductsData = [];
             let filesProcessed = 0;
             loadingSpinner.classList.remove('hidden');
-            messageArea.innerHTML = '';
-            Array.from(files).forEach(file => {
-                if (!file.name.endsWith('.xml')) {
-                    displayMessage('error', `Arquivo ignorado: ${file.name} (não é .xml)`);
-                    filesProcessed++;
-                    return;
-                }
+            messageArea.innerHTML = ''; // Clear previous messages
+            sendDuplicatasButton.disabled = true; // Disable until XMLs are processed again
+
+            const xmlFiles = Array.from(files).filter(f => f.name.endsWith('.xml'));
+            const nonXmlFiles = Array.from(files).filter(f => !f.name.endsWith('.xml'));
+
+            nonXmlFiles.forEach(file => {
+                displayMessage('error', `Arquivo ignorado: ${file.name} (não é .xml)`);
+            });
+
+            if (xmlFiles.length === 0) {
+                loadingSpinner.classList.add('hidden');
+                resultsArea.innerHTML = '<p class="text-gray-600 text-center py-8">Nenhum arquivo XML válido foi selecionado.</p>';
+                return;
+            }
+
+            xmlFiles.forEach(file => {
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     const products = processXML(e.target.result, file.name);
                     allProductsData = allProductsData.concat(products);
                     filesProcessed++;
-                    if (filesProcessed === files.length) {
+                    if (filesProcessed === xmlFiles.length) {
                         loadingSpinner.classList.add('hidden');
                         if (allProductsData.length > 0) {
-                            displayMessage('success', `${allProductsData.length} produtos carregados de ${files.length} XML(s).`);
+                            displayMessage('success', `${allProductsData.length} produtos carregados de ${xmlFiles.length} XML(s).`);
                             updateView();
                             exportButton.disabled = false;
-                            coletarDuplicatasDosXMLs();
+                            coletarDuplicatasDosXMLs(); // Re-collect duplicatas after new XMLs are loaded
                         } else {
-                            resultsArea.innerHTML = '<p class="text-gray-600 text-center py-8">Nenhum produto válido encontrado.</p>';
+                            resultsArea.innerHTML = '<p class="text-gray-600 text-center py-8">Nenhum produto válido encontrado nos XMLs processados.</p>';
+                            sendDuplicatasButton.disabled = true;
                         }
                     }
                 };
                 reader.onerror = () => {
                     filesProcessed++;
                     displayMessage('error', `Erro ao ler: ${file.name}`);
+                    if (filesProcessed === xmlFiles.length) {
+                        loadingSpinner.classList.add('hidden');
+                        // Ensure updateView and duplicata collection still run even if some files failed
+                        if (allProductsData.length > 0) {
+                            updateView();
+                            exportButton.disabled = false;
+                        } else {
+                             resultsArea.innerHTML = '<p class="text-gray-600 text-center py-8">Nenhum produto válido encontrado nos XMLs processados.</p>';
+                        }
+                        coletarDuplicatasDosXMLs();
+                    }
                 };
                 reader.readAsText(file);
             });
@@ -435,8 +484,22 @@ async function enviarTodasDuplicatas() {
         function sortData(column, direction) {
             filteredProductsData.sort((a, b) => {
                 let aVal = a[column], bVal = b[column];
+
+                // Handle nested properties for sorting (e.g., finalClassification.rawClass)
+                if (column.includes('.')) {
+                    const parts = column.split('.');
+                    aVal = a[parts[0]] ? a[parts[0]][parts[1]] : '';
+                    bVal = b[parts[0]] ? b[parts[0]][parts[1]] : '';
+                }
+
                 if (typeof aVal === 'string') aVal = aVal.toLowerCase();
                 if (typeof bVal === 'string') bVal = bVal.toLowerCase();
+
+                // Special handling for numeric columns that might be strings
+                if (!isNaN(parseFloat(aVal)) && isFinite(aVal) && !isNaN(parseFloat(bVal)) && isFinite(bVal)) {
+                     return (parseFloat(aVal) - parseFloat(bVal)) * (direction === 'asc' ? 1 : -1);
+                }
+
                 return (aVal < bVal ? -1 : 1) * (direction === 'asc' ? 1 : -1);
             });
         }
@@ -480,7 +543,7 @@ async function enviarTodasDuplicatas() {
                     <th data-column="codigoBarras">Cód. Barras (EAN) ${getSortIcon('codigoBarras')}</th>
                     <th>ICMS (CST/CSOSN)</th>
                     <th>CST PIS/COFINS</th>
-                    <th data-column="finalClassification.rawClass" class="bg-blue-800 text-white">Classificação (Fornec/CST)</th>
+                    <th data-column="finalClassification.rawClass" class="bg-blue-800 text-white">Classificação (Fornec/CST) ${getSortIcon('finalClassification.rawClass')}</th>
                     <th>Lote / Datas</th>
                     <th data-column="vUnCom" class="price-cell">Vlr Unit. (R$) ${getSortIcon('vUnCom')}</th>
                     <th>PMC / Info Adicional</th>
@@ -498,11 +561,11 @@ async function enviarTodasDuplicatas() {
                     nfeRow.innerHTML = `<td colspan="10" class="p-3">NF-e: <span class="font-extrabold">${item.nNF}</span> | Emitente: ${item.xNomeEmit} (CNPJ: ${item.cnpjEmit})</td>`;
                     currentNfe = item.nNF;
                 }
-                const lotContent = `${item.nLote ? `Lote: <span class="font-bold">${item.nLote}</span><br>` : ''}${item.qLote ? `Qtde: ${parseFloat(item.qLote).toFixed(2)}<br>` : ''}${item.dFabFormatted ? `Fab.: ${item.dFabFormatted}<br>` : ''}${item.dValFormatted ? `Val.: ${item.dValFormatted}<br>` : ''}${!item.nLote && !item.qLote ? 'Nenhuma info de lote.' : ''}`;
+                const lotContent = `${item.nLote ? `Lote: <span class="font-bold">${item.nLote}</span><br>` : ''}${item.qLote ? `Qtde: ${parseFloat(item.qLote).toFixed(2)}<br>` : ''}${item.dFabFormatted ? `Fab.: ${item.dFabFormatted}<br>` : ''}${item.dValFormatted ? `Val.: ${item.dValFormatted}<br>` : ''}${!item.nLote && !item.qLote && !item.dFabFormatted && !item.dValFormatted ? 'Nenhuma info de lote.' : ''}`;
                 let pmcPmpCellContent = [];
                 if (item.vPMCValue) pmcPmpCellContent.push(`<div class="pmc-highlight" title="vPMC">PMC: R$ ${item.pmcFormatted}</div>`);
                 if (item.infAdProd) pmcPmpCellContent.push(`<div class="inf-ad-prod-highlight" title="Inf Ad Prod">${item.infAdProd}</div>`);
-                const newRow = tbody.insertRow();
+                const newRow = tbody.insertCell();
                 newRow.className = 'hover:bg-gray-100 transition-colors duration-75';
                 newRow.innerHTML = `
                     <td>${item.cProd || 'N/D'}</td>
@@ -522,7 +585,10 @@ async function enviarTodasDuplicatas() {
             paginationArea.classList.remove('hidden');
         }
         function getSortIcon(column) {
-            return currentSort.column === column ? (currentSort.direction === 'asc' ? ' UpArrow' : ' DownArrow') : ' Diamond';
+            if (currentSort.column === column) {
+                return currentSort.direction === 'asc' ? ' <span class="inline-block text-gray-400">▲</span>' : ' <span class="inline-block text-gray-400">▼</span>';
+            }
+            return ' <span class="inline-block text-gray-400">◆</span>';
         }
         function handleSort(column) {
             if (currentSort.column === column) {
@@ -588,4 +654,3 @@ async function enviarTodasDuplicatas() {
     </script>
 </body>
 </html>
-
