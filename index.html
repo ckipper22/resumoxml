@@ -117,10 +117,10 @@
 
     <script>
         // =================================================================================
-        // ✅ 1. CONFIGURAÇÃO COM O SEU LINK
+        // ❌ 1. CONFIGURAÇÃO ANTERIOR DO LINK REMOVIDA
         // =================================================================================
-        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyni99dUfh6RZVkR89e5YlvBMQhoFPPHWJi7eIbYlEV-4-XkYwiwHeVfHCVDJvtzCvT3Q/exec';
-
+        // const WEB_APP_URL = '...'; // REMOVIDO
+        
         const xmlInput = document.getElementById('xmlInput');
         const resultsArea = document.getElementById('resultsArea');
         const messageArea = document.getElementById('message-area');
@@ -249,8 +249,10 @@
                 displayMessage('warning', `Nota ${nNF} (${fileName}) não possui itens.`);
                 return true;
             }
+            
             const processingMsg = resultsArea.querySelector('.text-blue-500');
             if (processingMsg) processingMsg.remove();
+
             const container = document.createElement('div');
             container.className = 'nfeContainer bg-white p-6 shadow-xl rounded-xl mb-8 border-l-4 border-blue-600';
             container.innerHTML = `
@@ -270,12 +272,16 @@
                 </div>`;
             resultsArea.appendChild(container);
 
+            // ❌ Lógica de envio de duplicatas removida/desativada
+            /*
             const duplicatasParaEnviar = extractDuplicatesForSheet(xmlDoc);
             if (duplicatasParaEnviar.length > 0) {
                 duplicatasParaEnviar.forEach(dup => enviarDadosParaPlanilha(dup));
             } else {
                 displayMessage('warning', `Aviso: Nenhuma duplicata encontrada na NF-e ${nNF} para enviar à planilha.`);
             }
+            */
+
             return true;
         }
 
@@ -287,15 +293,19 @@
             const cEAN = safeQuery(detElement, 'prod/cEAN');
             const cEANTrib = safeQuery(detElement, 'prod/cEANTrib');
             const codigoBarras = (cEAN && cEAN !== 'SEM GTIN') ? cEAN : ((cEANTrib && cEANTrib !== 'SEM GTIN') ? cEANTrib : 'N/D');
+
             let icmsCode = safeQuery(detElement, 'imposto/ICMS/*/CSOSN') || safeQuery(detElement, 'imposto/ICMS/*/CST');
             const vIcmsStValue = safeQuery(detElement, 'imposto/ICMS/*/vICMSST');
             const pisCST = safeQuery(detElement, 'imposto/PIS/*/CST') || 'N/D';
             const cofinsCST = safeQuery(detElement, 'imposto/COFINS/*/CST') || 'N/D';
+            
             const infAdProd = safeQuery(detElement, 'infAdProd');
             const vPMCValue = safeQuery(detElement, 'prod/med/vPMC');
+
             const internalClassificationCode = getInternalClassification(infAdProd);
             const cstClassification = getFiscalClassification(pisCST);
             let finalClassification = {};
+
             if (internalClassificationCode) {
                 let classificationText = '', cssClass = '';
                 switch (internalClassificationCode) {
@@ -307,26 +317,34 @@
             } else {
                 finalClassification = { ...cstClassification, calculatedCstText: `CST Fiscal: ${pisCST}` };
             }
+
             const icmsStatus = getIcmsStatus(icmsCode, vIcmsStValue);
+
             const dFab = safeQuery(detElement, 'prod/rastro/dFab') || safeQuery(detElement, 'prod/med/dFab');
             const dVal = safeQuery(detElement, 'prod/rastro/dVal') || safeQuery(detElement, 'prod/med/dVal');
             const nLote = safeQuery(detElement, 'prod/rastro/nLote') || safeQuery(detElement, 'prod/med/nLote');
             const qLote = safeQuery(detElement, 'prod/rastro/qLote') || safeQuery(detElement, 'prod/med/qLote');
+
             const dFabFormatted = formatDate(dFab);
             const dValFormatted = formatDate(dVal);
+
             let infAdProdDisplay = [];
             if (vPMCValue) infAdProdDisplay.push(`<div class="pmc-highlight">PMC: R$ ${formatCurrency(vPMCValue)}</div>`);
             if (infAdProd) infAdProdDisplay.push(`<div class="inf-ad-prod-highlight">${infAdProd}</div>`);
+            
             const pmcPmpCellContent = infAdProdDisplay.join('') || 'N/D';
+
             const lotContent = [
                 nLote ? `Lote: ${nLote}` : '',
                 qLote ? `Qtde Lote: ${parseFloat(qLote).toFixed(2)}` : '',
                 dFabFormatted ? `Fab.: ${dFabFormatted}` : '',
                 dValFormatted ? `Val.: ${dValFormatted}` : ''
             ].filter(Boolean).join('<br>') || 'Nenhuma informação de lote.';
+
             const icmsCellContent = icmsCode ? `${icmsCode} <span class="code-meaning">(${getMeaning(icmsCode, CSOSN_MEANINGS)})</span>` : 'N/D';
             const pisCellContent = pisCST !== 'N/D' ? `${pisCST} <span class="code-meaning">(${getMeaning(pisCST, PIS_COFINS_MEANINGS)})</span>` : 'N/D';
             const cofinsCellContent = cofinsCST !== 'N/D' ? `${cofinsCST} <span class="code-meaning">(${getMeaning(cofinsCST, PIS_COFINS_MEANINGS)})</span>` : 'N/D';
+
             return `
                 <tr class="hover:bg-gray-50 border-t border-gray-100">
                     <td>${cProd || 'N/D'}</td><td>${xProd || 'N/D'}</td><td>${codigoBarras}</td> 
@@ -376,51 +394,11 @@
             messageArea.prepend(p);
         }
 
-        function extractDuplicatesForSheet(xmlDoc) {
-            const nfeElement = xmlDoc.getElementsByTagName('infNFe')[0];
-            const fornecedor = safeQuery(nfeElement, 'emit/xNome') || '';
-            const numero = safeQuery(nfeElement, 'ide/nNF') || '';
-            const dataNota = (safeQuery(nfeElement, 'ide/dhEmi') || '').split('T')[0];
-            const valorNota = safeQuery(xmlDoc, 'infNFe/total/ICMSTot/vNF') || '';
-            const dataObjects = [];
-            const dupList = nfeElement.getElementsByTagName('dup');
-            Array.from(dupList).forEach(dup => {
-                dataObjects.push({
-                    fornecedor, numero, dataNota, valorNota,
-                    dVenc: dup.getElementsByTagName('dVenc')[0]?.textContent || '',
-                    vDup: dup.getElementsByTagName('vDup')[0]?.textContent || ''
-                });
-            });
-            return dataObjects;
-        }
-
-        async function enviarDadosParaPlanilha(dados) {
-            try {
-                const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(WEB_APP_URL)}`;
-                const response = await fetch(proxyUrl, {
-                    method: 'POST', mode: 'cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(dados)
-                });
-                if (!response.ok) throw new Error(`Erro HTTP ${response.status}`);
-                const result = await response.json();
-                if (result.success) {
-                    if (result.status === 'duplicate_skipped') {
-                        displayMessage('warning', `OK: Duplicata da NF ${dados.numero} (venc. ${dados.dVenc}) já existia.`);
-                    } else {
-                        displayMessage('success', `OK: Duplicata da NF ${dados.numero} (venc. ${dados.dVenc}) enviada.`);
-                    }
-                } else {
-                    displayMessage('error', `Falha no Script Google: ${result.error || 'Erro'}`);
-                }
-            } catch (error) {
-                if (error.message.includes('502')) {
-                    displayMessage('success', `✅ OK! Envio da NF ${dados.numero} concluído (provavelmente salvo).`);
-                } else {
-                    displayMessage('error', `Falha de Conexão: ${error.message}`);
-                }
-            }
-        }
+        // ❌ Funções de extração e envio de duplicatas removidas/desativadas
+        /*
+        function extractDuplicatesForSheet(xmlDoc) { ... }
+        async function enviarDadosParaPlanilha(dados) { ... }
+        */
     </script>
 </body>
 </html>
