@@ -277,30 +277,42 @@
 
         // === ENVIAR DUPLICATAS ===
         async function enviarTodasDuplicatas() {
-            if (duplicatasParaEnviar.length === 0) return displayMessage('error', 'Nenhuma duplicata para enviar.');
+    if (duplicatasParaEnviar.length === 0) return displayMessage('error', 'Nenhuma duplicata para enviar.');
 
-            sendDuplicatasButton.disabled = true;
-            sendSpinner.classList.remove('hidden');
-            let success = 0, error = 0;
+    sendDuplicatasButton.disabled = true;
+    sendSpinner.classList.remove('hidden');
+    let success = 0, error = 0;
 
-            for (const dup of duplicatasParaEnviar) {
-                try {
-                    const PROXY_URL = 'https://api.allorigins.win/raw?url=';
-                    const fullUrl = PROXY_URL + encodeURIComponent(WEB_APP_URL);
-                    
-                    const res = await fetch(fullUrl, { 
-                        method: 'POST', 
-                        headers: { 'Content-Type': 'application/json' }, 
-                        body: JSON.stringify(dup) 
-                    });
-                    
-                    const data = await res.json();
-                    if (data.success) success++;
-                    else { error++; displayMessage('error', `NF ${dup.numero}: ${data.error || 'Erro desconhecido'}`); }
-                } catch (e) {
-                    error++; displayMessage('error', `NF ${dup.numero}: Falha na conexão`);
-                }
+    for (const dup of duplicatasParaEnviar) {
+        try {
+            const PROXY_URL = 'https://corsproxy.io/?';  // CORRIGIDO AQUI
+            const fullUrl = PROXY_URL + encodeURIComponent(WEB_APP_URL);
+
+            const res = await fetch(fullUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dup)
+            });
+
+            const data = await res.json();
+            if (data.success) {
+                success++;
+                displayMessage('success', `NF ${dup.numero}: Enviada com sucesso!`);
+            } else {
+                error++;
+                displayMessage('error', `NF ${dup.numero}: ${data.error || 'Erro no Apps Script'}`);
             }
+        } catch (e) {
+            error++;
+            displayMessage('error', `NF ${dup.numero}: Falha na conexão (proxy)`);
+        }
+    }
+
+    sendDuplicatasButton.disabled = false;
+    sendSpinner.classList.add('hidden');
+    displayMessage('success', `Concluído: ${success} enviada(s), ${error} falha(s).`);
+    duplicatasParaEnviar = [];
+}
 
             sendDuplicatasButton.disabled = false;
             sendSpinner.classList.add('hidden');
@@ -567,3 +579,4 @@
     </script>
 </body>
 </html>
+
