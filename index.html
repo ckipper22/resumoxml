@@ -275,41 +275,53 @@
         }
 
         // === ENVIAR DUPLICATAS (COM allorigins.win VIA GET + contents) ===
-        async function enviarTodasDuplicatas() {
-            if (duplicatasParaEnviar.length === 0) {
-                return displayMessage('error', 'Nenhuma duplicata para enviar.');
+        // === ENVIAR DUPLICATAS (COM corsproxy.io VIA GET + contents) ===
+async function enviarTodasDuplicatas() {
+    if (duplicatasParaEnviar.length === 0) {
+        return displayMessage('error', 'Nenhuma duplicata para enviar.');
+    }
+
+    sendDuplicatasButton.disabled = true;
+    sendSpinner.classList.remove('hidden');
+    let success = 0, error = 0;
+
+    for (const dup of duplicatasParaEnviar) {
+        try {
+            const params = new URLSearchParams();
+            params.append('url', WEB_APP_URL);
+            params.append('contents', JSON.stringify(dup));
+
+            const fullUrl = `https://corsproxy.io/?${params.toString()}`;
+
+            const res = await fetch(fullUrl);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+            const text = await res.text();
+            let result;
+            try {
+                result = JSON.parse(text);
+            } catch (e) {
+                throw new Error(`Resposta inválida: ${text.substring(0, 100)}`);
             }
 
-            sendDuplicatasButton.disabled = true;
-            sendSpinner.classList.remove('hidden');
-            let success = 0, error = 0;
-
-            for (const dup of duplicatasParaEnviar) {
-                try {
-                    const params = new URLSearchParams();
-                    params.append('url', WEB_APP_URL);
-                    params.append('contents', JSON.stringify(dup));
-
-                    const fullUrl = `https://api.allorigins.win/get?${params.toString()}`;
-
-                    const res = await fetch(fullUrl);
-                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-                    const data = await res.json();
-                    const result = JSON.parse(data.contents);
-
-                    if (result.success) {
-                        success++;
-                        displayMessage('success', `NF ${dup.numero}: Enviada!`);
-                    } else {
-                        error++;
-                        displayMessage('error', `NF ${dup.numero}: ${result.error}`);
-                    }
-                } catch (e) {
-                    error++;
-                    displayMessage('error', `NF ${dup.numero}: ${e.message}`);
-                }
+            if (result.success) {
+                success++;
+                displayMessage('success', `NF ${dup.numero}: Enviada!`);
+            } else {
+                error++;
+                displayMessage('error', `NF ${dup.numero}: ${result.error}`);
             }
+        } catch (e) {
+            error++;
+            displayMessage('error', `NF ${dup.numero}: ${e.message}`);
+        }
+    }
+
+    sendDuplicatasButton.disabled = false;
+    sendSpinner.classList.add('hidden');
+    displayMessage('success', `Concluído: ${success} OK, ${error} falhas.`);
+    duplicatasParaEnviar = [];
+}
 
             sendDuplicatasButton.disabled = false;
             sendSpinner.classList.add('hidden');
@@ -576,3 +588,4 @@
     </script>
 </body>
 </html>
+
