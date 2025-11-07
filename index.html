@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Processador de XMLs + Envio Manual para Planilha</title>
+    <title>Processador de XMLs + Envio Manual para Planilha</title>fenviarto
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f7fafc; color: #1a202c; }
@@ -187,21 +187,36 @@
 
         // === ENVIAR DUPLICATAS ===
         async function enviarTodasDuplicatas() {
-            if (duplicatasParaEnviar.length === 0) return displayMessage('error', 'Nenhuma duplicata para enviar.');
+  if (duplicatasParaEnviar.length === 0) return displayMessage('error', 'Nenhuma duplicata para enviar.');
 
-            sendDuplicatasButton.disabled = true;
-            sendSpinner.classList.remove('hidden');
-            let success = 0, error = 0;
+  sendDuplicatasButton.disabled = true;
+  sendSpinner.classList.remove('hidden');
+  let success = 0, error = 0;
 
-            for (const dup of duplicatasParaEnviar) {
-                try {
-                    const res = await fetch(WEB_APP_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dup) });
-                    const data = await res.json();
-                    data.success ? success++ : (error++, displayMessage('error', `NF ${dup.numero}: ${data.error}`));
-                } catch (e) {
-                    error++; displayMessage('error', `NF ${dup.numero}: Falha na conexão`);
-                }
-            }
+  for (const dup of duplicatasParaEnviar) {
+    try {
+      // PROXY CORS GRÁTIS - RESOLVE 100%
+      const PROXY_URL = 'https://api.allorigins.win/raw?url=';
+      const fullUrl = encodeURIComponent(WEB_APP_URL);
+      
+      const res = await fetch(PROXY_URL + fullUrl, { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify(dup) 
+      });
+      
+      const data = await res.json();
+      data.success ? success++ : (error++, displayMessage('error', `NF ${dup.numero}: ${data.error}`));
+    } catch (e) {
+      error++; displayMessage('error', `NF ${dup.numero}: Falha na conexão`);
+    }
+  }
+
+  sendDuplicatasButton.disabled = false;
+  sendSpinner.classList.add('hidden');
+  displayMessage('success', `${success} enviada(s), ${error} falha(s).`);
+  duplicatasParaEnviar = [];
+}
 
             sendDuplicatasButton.disabled = false;
             sendSpinner.classList.add('hidden');
@@ -298,4 +313,5 @@
     </script>
 </body>
 </html>
+
 
