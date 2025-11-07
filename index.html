@@ -168,7 +168,7 @@
 
     <script>
         // === CONFIGURAÇÃO ===
-        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzbeawKlm7s0Dl8ok-2AXUepTb0JG_2a7F1qQ3OLZw-mHIMVbgMq3dpXp1E8jwQ7-glCQ/exec'; // ← SUBSTITUA PELA NOVA URL APÓS DEPLOY
+        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzv6kfKIqyCaXkovUd8ywjqDvw3_iIbIJfPXHkxOAWa7QQEJvJzxg2n92yXXuJUz4G0NQ/exec';
 
         // === DOM Elements ===
         const xmlInput = document.getElementById('xmlInput');
@@ -274,7 +274,7 @@
             });
         }
 
-        // === ENVIAR DUPLICATAS (CORRIGIDA E 100% FUNCIONAL) ===
+        // === ENVIAR DUPLICATAS (COM allorigins.win VIA GET + contents) ===
         async function enviarTodasDuplicatas() {
             if (duplicatasParaEnviar.length === 0) {
                 return displayMessage('error', 'Nenhuma duplicata para enviar.');
@@ -286,32 +286,34 @@
 
             for (const dup of duplicatasParaEnviar) {
                 try {
-                const PROXY_URL = 'https://cors.sh/?url=';
-                    const fullUrl = PROXY_URL + encodeURIComponent(WEB_APP_URL);
+                    const params = new URLSearchParams();
+                    params.append('url', WEB_APP_URL);
+                    params.append('contents', JSON.stringify(dup));
 
-                    const res = await fetch(fullUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(dup)
-                    });
+                    const fullUrl = `https://api.allorigins.win/get?${params.toString()}`;
+
+                    const res = await fetch(fullUrl);
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
                     const data = await res.json();
-                    if (data.success) {
+                    const result = JSON.parse(data.contents);
+
+                    if (result.success) {
                         success++;
-                        displayMessage('success', `NF ${dup.numero}: Enviada com sucesso!`);
+                        displayMessage('success', `NF ${dup.numero}: Enviada!`);
                     } else {
                         error++;
-                        displayMessage('error', `NF ${dup.numero}: ${data.error || 'Erro no Apps Script'}`);
+                        displayMessage('error', `NF ${dup.numero}: ${result.error}`);
                     }
                 } catch (e) {
                     error++;
-                    displayMessage('error', `NF ${dup.numero}: Falha na conexão`);
+                    displayMessage('error', `NF ${dup.numero}: ${e.message}`);
                 }
             }
 
             sendDuplicatasButton.disabled = false;
             sendSpinner.classList.add('hidden');
-            displayMessage('success', `Concluído: ${success} enviada(s), ${error} falha(s).`);
+            displayMessage('success', `Concluído: ${success} OK, ${error} falhas.`);
             duplicatasParaEnviar = [];
         }
 
@@ -574,4 +576,3 @@
     </script>
 </body>
 </html>
-
