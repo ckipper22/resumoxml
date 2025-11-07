@@ -2,37 +2,45 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Leitor de XML de NF-e e Duplicatas</title>
+    <title>Analisador Completo de NF-e (XML)</title>
     <style>
-        body { font-family: sans-serif; line-height: 1.6; padding: 20px; background-color: #f4f4f4; }
-        #drop-area { border: 2px dashed #ccc; border-radius: 20px; padding: 20px; text-align: center; margin-bottom: 20px; background-color: #fff; }
-        #file-list { list-style-type: none; padding: 0; }
-        #file-list li { background-color: #e9e9e9; padding: 5px; margin-bottom: 5px; border-radius: 5px; }
-        #results { margin-top: 20px; }
-        #message-area { padding: 10px; margin-bottom: 15px; border-radius: 5px; display: none; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; padding: 20px; background-color: #f4f4f4; color: #333; }
+        .container { max-width: 1200px; margin: 0 auto; background-color: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        h1, h2, h3 { color: #1a1a1a; }
+        #drop-area { border: 3px dashed #ccc; border-radius: 10px; padding: 40px 20px; text-align: center; margin-bottom: 20px; background-color: #fafafa; cursor: pointer; transition: background-color 0.2s, border-color 0.2s; }
+        #drop-area.drag-over { background-color: #e9f5ff; border-color: #007bff; }
+        #file-list { list-style-type: none; padding: 0; margin-top: 15px; }
+        #file-list li { background-color: #f0f0f0; padding: 8px 12px; margin-bottom: 5px; border-radius: 5px; font-size: 14px; }
+        #message-area { padding: 12px 15px; margin-bottom: 20px; border-radius: 5px; display: none; font-weight: 500; }
         .message-success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
         .message-error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
         .message-warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+        .nfe-card { border: 1px solid #eee; border-radius: 8px; margin-top: 20px; overflow: hidden; }
+        .nfe-header { background-color: #f8f9fa; padding: 15px; border-bottom: 1px solid #eee; }
+        .nfe-header h3 { margin: 0; font-size: 18px; }
+        .nfe-body { padding: 15px; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background-color: #f2f2f2; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 14px; }
+        th { background-color: #f2f2f2; font-weight: 600; }
     </style>
 </head>
 <body>
-    <h1>Analisador de Duplicatas de NF-e (XML)</h1>
-    <div id="drop-area">
-        <p>Arraste e solte arquivos XML aqui ou clique para selecionar</p>
-        <input type="file" id="file-input" multiple accept=".xml" style="display: none;">
+    <div class="container">
+        <h1>Analisador Completo de NF-e e Duplicatas (XML)</h1>
+        <div id="drop-area">
+            <p>Arraste e solte arquivos XML aqui ou clique para selecionar</p>
+            <input type="file" id="file-input" multiple accept=".xml" style="display: none;">
+        </div>
+        <ul id="file-list"></ul>
+        <div id="message-area"></div>
+        <div id="results"></div>
     </div>
-    <ul id="file-list"></ul>
-    <div id="message-area"></div>
-    <div id="results"></div>
 
     <script>
         // =================================================================================
-        // CONFIGURAÇÃO DO SEU WEB APP DO GOOGLE APPS SCRIPT
+        // ✅ CONFIGURAÇÃO DO SEU WEB APP DO GOOGLE APPS SCRIPT
         // =================================================================================
-        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyni99dUfh6RZVkR89e5YlvBMQhoFPPHWJi7eIbYlEV-4-XkYwiwHeVfHCVDJvtzCvT3Q/exec';
+        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyni99dUfh6RZVkR89e5YlvBMQhoFPPHWJi7eIbYlEV-4-XkYwiwHeVfHCVDJvtzCvT3Q/exec'; // ⚠️ ATENÇÃO: Use o URL da versão com anti-duplicidade.
 
         // --- Elementos do DOM ---
         const dropArea = document.getElementById('drop-area');
@@ -42,31 +50,21 @@
         const messageArea = document.getElementById('message-area');
 
         // --- Funções de Drag and Drop ---
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            dropArea.addEventListener(eventName, preventDefaults, false);
-        });
-
-        function preventDefaults(e) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-
-        dropArea.addEventListener('drop', handleDrop, false);
+        ['dragenter', 'dragover'].forEach(eventName => dropArea.addEventListener(eventName, () => dropArea.classList.add('drag-over')));
+        ['dragleave', 'drop'].forEach(eventName => dropArea.addEventListener(eventName, () => dropArea.classList.remove('drag-over')));
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => dropArea.addEventListener(eventName, e => { e.preventDefault(); e.stopPropagation(); }));
+        dropArea.addEventListener('drop', e => handleFiles(e.dataTransfer.files));
         dropArea.addEventListener('click', () => fileInput.click());
-        fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+        fileInput.addEventListener('change', e => handleFiles(e.target.files));
 
-        function handleDrop(e) {
-            handleFiles(e.dataTransfer.files);
-        }
-
-        // --- Função Principal para Processar os Arquivos ---
+        // --- Função Principal de Orquestração ---
         function handleFiles(files) {
-            resultsDiv.innerHTML = '<h2>Processando arquivos...</h2>';
+            resultsDiv.innerHTML = '';
             fileList.innerHTML = '';
             
             [...files].forEach(file => {
                 const listItem = document.createElement('li');
-                listItem.textContent = file.name;
+                listItem.textContent = `Arquivo carregado: ${file.name}`;
                 fileList.appendChild(listItem);
                 
                 const reader = new FileReader();
@@ -75,142 +73,158 @@
                     const parser = new DOMParser();
                     const xmlDoc = parser.parseFromString(xmlText, "application/xml");
                     
-                    // Extrai e exibe os dados na tela
-                    const extractedHtml = extractAndDisplayData(xmlDoc);
+                    // 1. Extrai e exibe os dados visuais completos na tela
+                    const extractedHtml = extractAndDisplayVisualData(xmlDoc);
                     resultsDiv.innerHTML += extractedHtml;
 
-                    // Extrai os dados novamente, mas agora para enviar para a planilha
-                    const dataToSend = extractDataForSheet(xmlDoc);
-                    dataToSend.forEach(duplicata => {
-                        enviarDadosParaPlanilha(duplicata);
-                    });
+                    // 2. Extrai os dados das duplicatas para enviar para a planilha
+                    const dataToSend = extractDuplicatesForSheet(xmlDoc);
+                    if (dataToSend.length > 0) {
+                        dataToSend.forEach(duplicata => {
+                            enviarDadosParaPlanilha(duplicata);
+                        });
+                    } else {
+                        displayMessage('warning', `Nenhuma duplicata encontrada no arquivo ${file.name} para ser enviada à planilha.`);
+                    }
                 };
                 reader.readAsText(file);
             });
         }
         
         function displayMessage(type, message) {
-            messageArea.style.display = 'block';
-            messageArea.className = `message-${type}`;
-            messageArea.textContent = message;
+            const newMessage = document.createElement('div');
+            newMessage.style.display = 'block';
+            newMessage.className = `message-${type}`;
+            newMessage.textContent = message;
+            messageArea.prepend(newMessage); // Adiciona novas mensagens no topo
         }
 
         // =================================================================================
-        // NOVA FUNÇÃO DE EXTRAÇÃO DE DADOS (VISUAL) - NÃO PRECISA MEXER AQUI
-        // Esta função apenas formata os dados para exibição na tela.
+        // ✅ FUNÇÃO DE EXTRAÇÃO VISUAL COMPLETA
+        // Extrai todos os detalhes dos produtos para exibir na tela.
         // =================================================================================
-        function extractAndDisplayData(xmlDoc) {
-            const nfeProc = xmlDoc.getElementsByTagName('nfeProc')[0];
+        function extractAndDisplayVisualData(xmlDoc) {
+            const nfeProc = xmlDoc.querySelector('nfeProc');
             if (!nfeProc) return '<p>Estrutura de NF-e inválida.</p>';
 
-            const ide = nfeProc.getElementsByTagName('ide')[0];
-            const emit = nfeProc.getElementsByTagName('emit')[0];
-            const cobr = nfeProc.getElementsByTagName('cobr')[0];
+            const nNF = nfeProc.querySelector('nNF')?.textContent || 'N/D';
+            const xNome = nfeProc.querySelector('emit xNome')?.textContent || 'N/D';
+            const CNPJ = nfeProc.querySelector('emit CNPJ')?.textContent || 'N/D';
+            
+            let html = `<div class="nfe-card">
+                            <div class="nfe-header">
+                                <h3>NF-e: ${nNF} | Emitente: ${xNome} (CNPJ: ${CNPJ})</h3>
+                            </div>
+                            <div class="nfe-body">`;
+            
+            const detList = nfeProc.querySelectorAll('det');
+            if (detList.length > 0) {
+                html += '<h4>Produtos</h4><table>';
+                html += '<tr><th>Produto</th><th>Lote/Validade</th><th>Qtde</th><th>Vlr. Unit.</th><th>Impostos (CST)</th></tr>';
+                
+                detList.forEach(det => {
+                    const prod = det.querySelector('prod');
+                    const imposto = det.querySelector('imposto');
 
-            const nNF = ide.getElementsByTagName('nNF')[0]?.textContent || 'N/D';
-            const xNome = emit.getElementsByTagName('xNome')[0]?.textContent || 'N/D';
-            const CNPJ = emit.getElementsByTagName('CNPJ')[0]?.textContent || 'N/D';
-            
-            let html = `<h3>NF-e: ${nNF} | Emitente: ${xNome} (CNPJ: ${CNPJ})</h3>`;
-            
-            if (cobr) {
-                const dupList = cobr.getElementsByTagName('dup');
-                html += '<table><tr><th>Vencimento</th><th>Valor</th></tr>';
-                for (let dup of dupList) {
-                    const dVenc = dup.getElementsByTagName('dVenc')[0]?.textContent || 'N/D';
-                    const vDup = dup.getElementsByTagName('vDup')[0]?.textContent || 'N/D';
-                    html += `<tr><td>${dVenc}</td><td>${vDup}</td></tr>`;
-                }
+                    const xProd = prod.querySelector('xProd')?.textContent || 'N/D';
+                    const cProd = prod.querySelector('cProd')?.textContent || '';
+                    const vUnCom = parseFloat(prod.querySelector('vUnCom')?.textContent || 0).toFixed(2);
+                    const qCom = parseFloat(prod.querySelector('qCom')?.textContent || 0).toFixed(2);
+
+                    const rastro = prod.querySelector('rastro');
+                    const nLote = rastro?.querySelector('nLote')?.textContent || 'N/D';
+                    const dVal = rastro?.querySelector('dVal')?.textContent.split('-').reverse().join('/') || 'N/D';
+                    
+                    const icmsNode = imposto.querySelector('ICMS > *'); // Pega o primeiro filho de ICMS
+                    const pisNode = imposto.querySelector('PIS > *');
+                    const cofinsNode = imposto.querySelector('COFINS > *');
+
+                    const cstIcms = icmsNode?.querySelector('CST')?.textContent || icmsNode?.querySelector('CSOSN')?.textContent || 'N/D';
+                    const cstPis = pisNode?.querySelector('CST')?.textContent || 'N/D';
+                    const cstCofins = cofinsNode?.querySelector('CST')?.textContent || 'N/D';
+
+                    html += `<tr>
+                                <td>${cProd} - ${xProd}</td>
+                                <td>Lote: ${nLote}<br>Val: ${dVal}</td>
+                                <td>${qCom}</td>
+                                <td>R$ ${vUnCom}</td>
+                                <td>ICMS: ${cstIcms}<br>PIS: ${cstPis}<br>COFINS: ${cstCofins}</td>
+                             </tr>`;
+                });
                 html += '</table>';
-            } else {
-                html += '<p>Não foram encontradas duplicatas neste XML.</p>';
             }
+
+            const cobr = nfeProc.querySelector('cobr');
+            if (cobr) {
+                const dupList = cobr.querySelectorAll('dup');
+                html += '<h4>Duplicatas</h4><table><tr><th>Vencimento</th><th>Valor</th></tr>';
+                dupList.forEach(dup => {
+                    const dVenc = dup.querySelector('dVenc')?.textContent || 'N/D';
+                    const vDup = parseFloat(dup.querySelector('vDup')?.textContent || 0).toFixed(2);
+                    html += `<tr><td>${dVenc}</td><td>R$ ${vDup}</td></tr>`;
+                });
+                html += '</table>';
+            }
+            
+            html += '</div></div>';
             return html;
         }
 
         // =================================================================================
-        // NOVA FUNÇÃO DE EXTRAÇÃO DE DADOS (PARA PLANILHA)
-        // Esta função pega os dados do XML e prepara para o envio.
+        // FUNÇÃO DE EXTRAÇÃO PARA A PLANILHA (Simplificada)
+        // Extrai apenas os dados necessários para o Google Apps Script.
         // =================================================================================
-        function extractDataForSheet(xmlDoc) {
-            const nfeProc = xmlDoc.getElementsByTagName('nfeProc')[0];
+        function extractDuplicatesForSheet(xmlDoc) {
+            const nfeProc = xmlDoc.querySelector('nfeProc');
             if (!nfeProc) return [];
 
-            const ide = nfeProc.getElementsByTagName('ide')[0];
-            const emit = nfeProc.getElementsByTagName('emit')[0];
-            const cobr = nfeProc.getElementsByTagName('cobr')[0];
-            const total = nfeProc.getElementsByTagName('ICMSTot')[0];
-
-            // Dados do Cabeçalho da Nota
-            const fornecedor = emit.getElementsByTagName('xNome')[0]?.textContent || '';
-            const numero = ide.getElementsByTagName('nNF')[0]?.textContent || '';
-            const dataNota = ide.getElementsByTagName('dhEmi')[0]?.textContent.split('T')[0] || '';
-            const valorNota = total.getElementsByTagName('vNF')[0]?.textContent || '';
+            const fornecedor = nfeProc.querySelector('emit xNome')?.textContent || '';
+            const numero = nfeProc.querySelector('nNF')?.textContent || '';
+            const dataNota = nfeProc.querySelector('dhEmi')?.textContent.split('T')[0] || '';
+            const valorNota = nfeProc.querySelector('ICMSTot vNF')?.textContent || '';
 
             const dataObjects = [];
-            if (cobr) {
-                const dupList = cobr.getElementsByTagName('dup');
-                for (let dup of dupList) {
-                    const dVenc = dup.getElementsByTagName('dVenc')[0]?.textContent || '';
-                    const vDup = dup.getElementsByTagName('vDup')[0]?.textContent || '';
-                    
-                    dataObjects.push({
-                        fornecedor: fornecedor,
-                        numero: numero,
-                        dataNota: dataNota,
-                        valorNota: valorNota,
-                        dVenc: dVenc,
-                        vDup: vDup
-                    });
-                }
-            }
+            const dupList = nfeProc.querySelectorAll('cobr dup');
+            dupList.forEach(dup => {
+                const dVenc = dup.querySelector('dVenc')?.textContent || '';
+                const vDup = dup.querySelector('vDup')?.textContent || '';
+                
+                dataObjects.push({ fornecedor, numero, dataNota, valorNota, dVenc, vDup });
+            });
             return dataObjects;
         }
 
         // =================================================================================
-        // FUNÇÃO DE ENVIO PARA A PLANILHA (COM MENSAGEM DO ERRO 502 MELHORADA)
+        // ✅ FUNÇÃO DE ENVIO COM A MENSAGEM DO ERRO 502 MELHORADA
         // =================================================================================
         async function enviarDadosParaPlanilha(dados) {
             try {
-                // Usando o corsproxy.io. Se ele falhar, pode ser trocado pelo allorigins.
                 const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(WEB_APP_URL)}`;
-
                 const response = await fetch(proxyUrl, {
                     method: 'POST',
-                    mode: 'cors', // Necessário para requisições via proxy
+                    mode: 'cors',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(dados)
                 });
 
-                if (!response.ok) {
-                    throw new Error(`Erro HTTP ${response.status}`);
-                }
+                if (!response.ok) throw new Error(`Erro HTTP ${response.status}`);
                 
                 const result = await response.json();
-
                 if (result.success) {
                     if (result.status === 'duplicate_skipped') {
-                        // Mensagem amigável para duplicatas ignoradas
-                        displayMessage('warning', `NF ${dados.numero} (venc. ${dados.dVenc}) já existe na planilha. Ignorado.`);
+                        displayMessage('warning', `OK: Duplicata da NF ${dados.numero} (venc. ${dados.dVenc}) já existia e foi ignorada.`);
                     } else {
-                        // Mensagem de sucesso quando o Google confirma a adição
-                        displayMessage('success', `NF ${dados.numero} (venc. ${dados.dVenc}) enviada e confirmada com sucesso!`);
+                        displayMessage('success', `OK: Duplicata da NF ${dados.numero} (venc. ${dados.dVenc}) enviada e confirmada.`);
                     }
                 } else {
-                    displayMessage('error', `Erro no script ao enviar NF ${dados.numero}: ${result.error || 'Erro desconhecido'}`);
+                    displayMessage('error', `Falha no Script: ${result.error || 'Erro desconhecido'}`);
                 }
-
             } catch (error) {
-                // ========================================================
-                //  >>> MELHORIA PRINCIPAL APLICADA AQUI <<<
-                // ========================================================
-                // Se o erro for um 502 (timeout), exibe uma mensagem "OK" de sucesso,
-                // pois sabemos que os dados provavelmente foram salvos.
+                // --- TRATAMENTO INTELIGENTE DO ERRO 502 ---
                 if (error.message.includes('502')) {
                     displayMessage('success', `OK! Envio da NF ${dados.numero} concluído. A confirmação falhou (erro 502), mas o registro provavelmente foi salvo.`);
                 } else {
-                    // Para outros erros (falta de internet, URL errada, etc.)
-                    displayMessage('error', `Falha crítica ao enviar duplicata da NF ${dados.numero}: ${error.message}`);
+                    displayMessage('error', `Falha Crítica de Conexão: ${error.message}`);
                 }
             }
         }
