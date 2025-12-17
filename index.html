@@ -13,7 +13,7 @@
         .table-responsive {
             overflow-x: auto;
         }
-        /* Aumentado o min-width para acomodar a nova coluna */
+        /* Aumentado de 1400px para acomodar a nova coluna */
         table {
             min-width: 1500px; 
         }
@@ -72,16 +72,6 @@
             font-weight: 700;
             border: 1px solid #fcd34d;
         }
-        /* Estilo para destacar o Cód. ANVISA */
-        .anvisa-code {
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: #047857; /* Verde esmeralda */
-            background-color: #ecfdf5;
-            padding: 2px 4px;
-            border-radius: 4px;
-            display: inline-block;
-        }
     </style>
 </head>
 <body class="p-4 sm:p-8">
@@ -273,7 +263,7 @@
                         <thead>
                             <tr class="bg-blue-50 text-blue-700">
                                 <th class="rounded-tl-lg">Cód. Forn.</th><th>Descrição do Produto</th><th>Cód. Barras (EAN)</th>
-                                <th>Cód. ANVISA</th>                                  <th>ICMS (CST/CSOSN) & NCM</th><th class="bg-pink-200 text-pink-800">Situação ICMS (ST)</th>
+                                <th>Cód. ANVISA</th>                                 <th>ICMS (CST/CSOSN) & NCM</th><th class="bg-pink-200 text-pink-800">Situação ICMS (ST)</th>
                                 <th>CST PIS</th><th>CST COFINS</th><th class="bg-blue-200 text-blue-800">Classificação PIS/COFINS</th> 
                                 <th>Lote / Datas</th><th class="price-cell">Vlr Unit. (R$)</th><th class="rounded-tr-lg">PMP/PMC</th> 
                             </tr>
@@ -305,8 +295,8 @@
             const cEANTrib = safeQuery(detElement, 'prod/cEANTrib');
             const codigoBarras = (cEAN && cEAN !== 'SEM GTIN') ? cEAN : ((cEANTrib && cEANTrib !== 'SEM GTIN') ? cEANTrib : 'N/D');
 
-            // 2. EXTRAÇÃO DO CAMPO cProdANVISA
-            const cProdANVISA = safeQuery(detElement, 'prod/cProdANVISA') || 'N/D';
+            // EXTRAÇÃO DO CAMPO cProdANVISA
+            const cProdANVISA = safeQuery(detElement, 'prod/cProdANVISA') || 'N/D';
 
             let icmsCode = safeQuery(detElement, 'imposto/ICMS/*/CSOSN') || safeQuery(detElement, 'imposto/ICMS/*/CST');
             const vIcmsStValue = safeQuery(detElement, 'imposto/ICMS/*/vICMSST');
@@ -362,8 +352,7 @@
             return `
                 <tr class="hover:bg-gray-50 border-t border-gray-100">
                     <td>${cProd || 'N/D'}</td><td>${xProd || 'N/D'}</td><td>${codigoBarras}</td>
-                    <td><span class="anvisa-code">${cProdANVISA}</span></td>
-                    <td class="bg-yellow-50">${icmsCellContent}<span class="code-meaning mt-1 text-xs">NCM: ${NCM || 'N/D'}</span></td>
+                    <td>${cProdANVISA}</td>                     <td class="bg-yellow-50">${icmsCellContent}<span class="code-meaning mt-1 text-xs">NCM: ${NCM || 'N/D'}</span></td>
                     <td class="${icmsStatus.cssClass} text-center font-bold">${icmsStatus.status}<span class="code-meaning mt-1 text-xs text-current">${icmsStatus.detail}</span></td>
                     <td>${pisCellContent}</td><td>${cofinsCellContent}</td>
                     <td class="${finalClassification.cssClass} text-center font-bold">${finalClassification.classification}<span class="code-meaning mt-1 text-xs">(${finalClassification.calculatedCstText})</span></td>
