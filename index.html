@@ -1,408 +1,408 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Processador de XMLs para Cadastro de Produtos</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f7fafc;
-        }
-        .table-responsive {
-            overflow-x: auto;
-        }
-        /* Aumentado de 1400px para acomodar a nova coluna */
-        table {
-            min-width: 1500px; 
-        }
-        th, td {
-            padding: 10px;
-            font-size: 0.85rem;
-            vertical-align: top;
-        }
-        .code-meaning {
-            display: block;
-            font-size: 0.75rem;
-            color: #4a5568;
-            margin-top: 3px;
-        }
-        .lot-info {
-            font-size: 0.75rem;
-            color: #2b6cb0;
-            font-weight: 500;
-        }
-        .classificacao-positiva { background-color: #d1fae5; color: #065f46; font-weight: 600; }
-        .classificacao-negativa { background-color: #fee2e2; color: #991b1b; font-weight: 600; }
-        .classificacao-neutra { background-color: #eff6ff; color: #1e40af; font-weight: 600; }
-        .inf-ad-prod-highlight {
-            background-color: #f0f9ff;
-            color: #1e40af;
-            font-weight: 700;
-            padding: 4px 8px;
-            border-radius: 6px;
-            display: block;
-            border: 1px solid #bae6fd;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            margin-top: 4px;
-        }
-        .pmc-highlight {
-            background-color: #fefcbf;
-            color: #92400e;
-            font-weight: 700;
-            padding: 4px 8px;
-            border-radius: 6px;
-            display: block;
-            border: 1px solid #fde68a;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        }
-        .price-cell {
-            text-align: right;
-        }
-        .alerta-risco {
-            background-color: #fce7f3;
-            color: #be185d;
-            font-weight: 700;
-            border: 1px solid #f9a8d4;
-        }
-        .alerta-st-destacada {
-            background-color: #fef3c7;
-            color: #b45309;
-            font-weight: 700;
-            border: 1px solid #fcd34d;
-        }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Processador de XMLs para Cadastro de Produtos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7fafc;
+        }
+        .table-responsive {
+            overflow-x: auto;
+        }
+        /* Ajustado para acomodar a nova coluna */
+        table {
+            min-width: 1500px; 
+        }
+        th, td {
+            padding: 10px;
+            font-size: 0.85rem;
+            vertical-align: top;
+        }
+        .code-meaning {
+            display: block;
+            font-size: 0.75rem;
+            color: #4a5568;
+            margin-top: 3px;
+        }
+        .lot-info {
+            font-size: 0.75rem;
+            color: #2b6cb0;
+            font-weight: 500;
+        }
+        .classificacao-positiva { background-color: #d1fae5; color: #065f46; font-weight: 600; }
+        .classificacao-negativa { background-color: #fee2e2; color: #991b1b; font-weight: 600; }
+        .classificacao-neutra { background-color: #eff6ff; color: #1e40af; font-weight: 600; }
+        .inf-ad-prod-highlight {
+            background-color: #f0f9ff;
+            color: #1e40af;
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 6px;
+            display: block;
+            border: 1px solid #bae6fd;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            margin-top: 4px;
+        }
+        .pmc-highlight {
+            background-color: #fefcbf;
+            color: #92400e;
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 6px;
+            display: block;
+            border: 1px solid #fde68a;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .price-cell {
+            text-align: right;
+        }
+        .alerta-risco {
+            background-color: #fce7f3;
+            color: #be185d;
+            font-weight: 700;
+            border: 1px solid #f9a8d4;
+        }
+        .alerta-st-destacada {
+            background-color: #fef3c7;
+            color: #b45309;
+            font-weight: 700;
+            border: 1px solid #fcd34d;
+        }
+    </style>
 </head>
 <body class="p-4 sm:p-8">
 
-    <h1 class="text-3xl font-bold text-gray-800 border-b-4 border-blue-500 pb-2 mb-6 rounded-md">
-        Processador de XMLs para Cadastro de Produtos
-    </h1>
+    <h1 class="text-3xl font-bold text-gray-800 border-b-4 border-blue-500 pb-2 mb-6 rounded-md">
+        Processador de XMLs para Cadastro de Produtos
+    </h1>
 
-    <div id="inputArea" class="bg-white p-4 sm:p-6 shadow-lg rounded-xl mb-8 border border-gray-200">
-        <label for="xmlInput" class="block text-lg font-medium text-gray-700 mb-3">
-            Selecione um ou mais arquivos XML de NF-e de Compra:
-        </label>
-        <input type="file" id="xmlInput" multiple accept=".xml" class="block w-full text-sm text-gray-500
-            file:mr-4 file:py-2 file:px-4
-            file:rounded-lg file:border-0
-            file:text-sm file:font-semibold
-            file:bg-blue-50 file:text-blue-700
-            hover:file:bg-blue-100 cursor-pointer">
-    </div>
-    
-    <div id="message-area" class="mb-4 space-y-2"></div>
-    
-    <div id="fiscalLegend" class="bg-indigo-50 p-5 shadow-inner rounded-xl mb-8 border-l-4 border-indigo-400">
-        <h2 class="text-xl font-semibold text-indigo-800 mb-3">Contexto Fiscal de PIS/COFINS (Medicamentos)</h2>
-        <ul class="list-disc ml-5 text-gray-700 space-y-2">
-            <li><strong class="text-indigo-900">Lista Positiva:</strong> Isento ou Alíquota Zero/Suspensão.</li>
-            <li><strong class="text-indigo-900">Lista Negativa (Monofásico):</strong> Indústria paga com alíquota majorada. Revenda tem Alíquota Zero (CST 04).</li>
-            <li><strong class="text-indigo-900">Lista Neutra (Regime Geral):</strong> PIS/COFINS cobrado em cada etapa (CST 01/02/03/49/99).</li>
-        </ul>
-        <p class="mt-4 text-sm text-indigo-700 font-semibold">*A classificação prioriza a informação do fornecedor (infAdProd), usando o CST como referência secundária.</p>
-        <hr class="my-5 border-indigo-200">
-        <h2 class="text-xl font-semibold text-indigo-800 mb-3">Contexto Fiscal de ICMS (Substituição Tributária - ST)</h2>
-        <ul class="list-disc ml-5 text-gray-700 space-y-2">
-            <li><strong class="text-indigo-900">CST/CSOSN 60 ou 500:</strong> ICMS cobrado anteriormente por ST. <strong class="text-green-600">(Status OK)</strong></li>
-            <li><strong class="text-red-600">CST 00, 10, 20:</strong> Tributado Integralmente ou com ST. <strong class="text-red-600">(ALERTA DE RISCO)</strong> - Risco alto se Vlr ICMS-ST for zero.</li>
-            <li><strong class="text-indigo-900">CST 40/41, 90/900:</strong> Isenta, Não Tributada ou Outras. <strong class="text-yellow-600">(STATUS NEUTRO)</strong></li>
-        </ul>
-        <p class="mt-4 text-sm text-indigo-700 font-semibold">*A coluna "Situação ICMS" exibe o valor do **vICMSST** para auxiliar na conferência.</p>
-    </div>
+    <div id="inputArea" class="bg-white p-4 sm:p-6 shadow-lg rounded-xl mb-8 border border-gray-200">
+        <label for="xmlInput" class="block text-lg font-medium text-gray-700 mb-3">
+            Selecione um ou mais arquivos XML de NF-e de Compra:
+        </label>
+        <input type="file" id="xmlInput" multiple accept=".xml" class="block w-full text-sm text-gray-500
+            file:mr-4 file:py-2 file:px-4
+            file:rounded-lg file:border-0
+            file:text-sm file:font-semibold
+            file:bg-blue-50 file:text-blue-700
+            hover:file:bg-blue-100 cursor-pointer">
+    </div>
+    
+    <div id="message-area" class="mb-4 space-y-2"></div>
+    
+    <div id="fiscalLegend" class="bg-indigo-50 p-5 shadow-inner rounded-xl mb-8 border-l-4 border-indigo-400">
+        <h2 class="text-xl font-semibold text-indigo-800 mb-3">Contexto Fiscal de PIS/COFINS (Medicamentos)</h2>
+        <ul class="list-disc ml-5 text-gray-700 space-y-2">
+            <li><strong class="text-indigo-900">Lista Positiva:</strong> Isento ou Alíquota Zero/Suspensão.</li>
+            <li><strong class="text-indigo-900">Lista Negativa (Monofásico):</strong> Indústria paga com alíquota majorada. Revenda tem Alíquota Zero (CST 04).</li>
+            <li><strong class="text-indigo-900">Lista Neutra (Regime Geral):</strong> PIS/COFINS cobrado em cada etapa (CST 01/02/03/49/99).</li>
+        </ul>
+        <p class="mt-4 text-sm text-indigo-700 font-semibold">*A classificação prioriza a informação do fornecedor (infAdProd), usando o CST como referência secundária.</p>
+        <hr class="my-5 border-indigo-200">
+        <h2 class="text-xl font-semibold text-indigo-800 mb-3">Contexto Fiscal de ICMS (Substituição Tributária - ST)</h2>
+        <ul class="list-disc ml-5 text-gray-700 space-y-2">
+            <li><strong class="text-indigo-900">CST/CSOSN 60 ou 500:</strong> ICMS cobrado anteriormente por ST. <strong class="text-green-600">(Status OK)</strong></li>
+            <li><strong class="text-red-600">CST 00, 10, 20:</strong> Tributado Integralmente ou com ST. <strong class="text-red-600">(ALERTA DE RISCO)</strong> - Risco alto se Vlr ICMS-ST for zero.</li>
+            <li><strong class="text-indigo-900">CST 40/41, 90/900:</strong> Isenta, Não Tributada ou Outras. <strong class="text-yellow-600">(STATUS NEUTRO)</strong></li>
+        </ul>
+        <p class="mt-4 text-sm text-indigo-700 font-semibold">*A coluna "Situação ICMS" exibe o valor do **vICMSST** para auxiliar na conferência.</p>
+    </div>
 
-    <div id="resultsArea">
-        <p class="text-gray-600">Aguardando a seleção dos arquivos XML...</p>
-    </div>
+    <div id="resultsArea">
+        <p class="text-gray-600">Aguardando a seleção dos arquivos XML...</p>
+    </div>
 
-    <script>
-        // =================================================================================
-        // ❌ 1. CONFIGURAÇÃO ANTERIOR DO LINK REMOVIDA
-        // =================================================================================
-        // const WEB_APP_URL = '...'; // REMOVIDO
-        
-        const xmlInput = document.getElementById('xmlInput');
-        const resultsArea = document.getElementById('resultsArea');
-        const messageArea = document.getElementById('message-area');
-        const parser = new DOMParser();
+    <script>
+        // =================================================================================
+        // ❌ 1. CONFIGURAÇÃO ANTERIOR DO LINK REMOVIDA
+        // =================================================================================
+        // const WEB_APP_URL = '...'; // REMOVIDO
+        
+        const xmlInput = document.getElementById('xmlInput');
+        const resultsArea = document.getElementById('resultsArea');
+        const messageArea = document.getElementById('message-area');
+        const parser = new DOMParser();
 
-        xmlInput.addEventListener('change', handleFileSelect);
+        xmlInput.addEventListener('change', handleFileSelect);
 
-        const CSOSN_MEANINGS = {
-            '00': 'CST - Tributada integralmente', '10': 'CST - Tributada e com ST', '20': 'CST - Com redução da Base de Cálculo',
-            '30': 'CST - Isenta / Não tributada e com ST', '40': 'CST - Isenta', '41': 'CST - Não tributada',
-            '50': 'CST - Com suspensão', '51': 'CST - Com diferimento', '60': 'CST - ICMS cobrado por ST (Substituído)',
-            '70': 'CST - Com redução da BC e cobrança do ICMS por ST', '90': 'CST - Outras',
-            '101': 'CSOSN - Tributada SN com permissão de crédito', '102': 'CSOSN - Tributada SN sem permissão de crédito',
-            '103': 'CSOSN - Isenção ICMS SN para faixa de receita bruta', '201': 'CSOSN - Tributada SN com crédito e ICMS cobrado por ST',
-            '202': 'CSOSN - Tributada SN sem crédito e ICMS cobrado por ST', '203': 'CSOSN - Isenção ICMS SN para faixa de receita bruta e com cobrança do ICMS por ST',
-            '300': 'CSOSN - Imune (Produto Imune ao ICMS)', '400': 'CSOSN - Não tributada (Isenção legal ICMS/Remessa)',
-            '500': 'CSOSN - ICMS cobrado anteriormente por ST (Substituído)', '900': 'CSOSN - Outros (demais casos)',
-        };
+        const CSOSN_MEANINGS = {
+            '00': 'CST - Tributada integralmente', '10': 'CST - Tributada e com ST', '20': 'CST - Com redução da Base de Cálculo',
+            '30': 'CST - Isenta / Não tributada e com ST', '40': 'CST - Isenta', '41': 'CST - Não tributada',
+            '50': 'CST - Com suspensão', '51': 'CST - Com diferimento', '60': 'CST - ICMS cobrado por ST (Substituído)',
+            '70': 'CST - Com redução da BC e cobrança do ICMS por ST', '90': 'CST - Outras',
+            '101': 'CSOSN - Tributada SN com permissão de crédito', '102': 'CSOSN - Tributada SN sem permissão de crédito',
+            '103': 'CSOSN - Isenção ICMS SN para faixa de receita bruta', '201': 'CSOSN - Tributada SN com crédito e ICMS cobrado por ST',
+            '202': 'CSOSN - Tributada SN sem crédito e ICMS cobrado por ST', '203': 'CSOSN - Isenção ICMS SN para faixa de receita bruta e com cobrança do ICMS por ST',
+            '300': 'CSOSN - Imune (Produto Imune ao ICMS)', '400': 'CSOSN - Não tributada (Isenção legal ICMS/Remessa)',
+            '500': 'CSOSN - ICMS cobrado anteriormente por ST (Substituído)', '900': 'CSOSN - Outros (demais casos)',
+        };
 
-        const PIS_COFINS_MEANINGS = {
-            '01': 'Saída: Tributável com Alíquota Básica', '02': 'Saída: Tributável com Alíquota Diferenciada', 
-            '03': 'Saída: Tributável por Unidade de Medida', '04': 'Saída: Monofásica – Revenda a Alíquota Zero', '05': 'Saída: Substituição Tributária', 
-            '06': 'Saída: Tributável a Alíquota Zero', '07': 'Saída: Operação Isenta da Contribuição', '08': 'Saída: Operação sem Incidência',
-            '09': 'Saída: Operação com Suspensão da Contribuição', '49': 'Saída: Outras Operações de Saída',
-            '50': 'Entrada: Crédito Não Cumulativo - Vinculado a Receita Tributada', '51': 'Entrada: Crédito Não Cumulativo - Vinculado a Receita Não Tributada',
-            '52': 'Entrada: Crédito Não Cumulativo - Vinculado a Exportação', '53': 'Entrada: Crédito Não Cumulativo - Vinculado a Tributada e Não-Tributada',
-            '54': 'Entrada: Crédito Não Cumulativo - Vinculado a Tributada e Exportação', '55': 'Entrada: Crédito Não Cumulativo - Vinculado a Não-Tributada e Exportação',
-            '56': 'Entrada: Crédito Não Cumulativo - Vinculado a Todas as Receitas', '60': 'Entrada: Crédito Presumido - Vinculado a Receita Tributada',
-            '61': 'Entrada: Crédito Presumido - Vinculado a Receita Não Tributada', '62': 'Entrada: Crédito Presumido - Vinculado a Exportação',
-            '63': 'Entrada: Crédito Presumido - Vinculado a Tributada e Não-Tributada', '64': 'Entrada: Crédito Presumido - Vinculado a Tributada e Exportação',
-            '65': 'Entrada: Crédito Presumido - Vinculado a Não-Tributada e Exportação', '66': 'Entrada: Crédito Presumido - Vinculado a Todas as Receitas',
-            '99': 'Outras Operações',
-        };
+        const PIS_COFINS_MEANINGS = {
+            '01': 'Saída: Tributável com Alíquota Básica', '02': 'Saída: Tributável com Alíquota Diferenciada', 
+            '03': 'Saída: Tributável por Unidade de Medida', '04': 'Saída: Monofásica – Revenda a Alíquota Zero', '05': 'Saída: Substituição Tributária', 
+            '06': 'Saída: Tributável a Alíquota Zero', '07': 'Saída: Operação Isenta da Contribuição', '08': 'Saída: Operação sem Incidência',
+            '09': 'Saída: Operação com Suspensão da Contribuição', '49': 'Saída: Outras Operações de Saída',
+            '50': 'Entrada: Crédito Não Cumulativo - Vinculado a Receita Tributada', '51': 'Entrada: Crédito Não Cumulativo - Vinculado a Receita Não Tributada',
+            '52': 'Entrada: Crédito Não Cumulativo - Vinculado a Exportação', '53': 'Entrada: Crédito Não Cumulativo - Vinculado a Tributada e Não-Tributada',
+            '54': 'Entrada: Crédito Não Cumulativo - Vinculado a Tributada e Exportação', '55': 'Entrada: Crédito Não Cumulativo - Vinculado a Não-Tributada e Exportação',
+            '56': 'Entrada: Crédito Não Cumulativo - Vinculado a Todas as Receitas', '60': 'Entrada: Crédito Presumido - Vinculado a Receita Tributada',
+            '61': 'Entrada: Crédito Presumido - Vinculado a Receita Não Tributada', '62': 'Entrada: Crédito Presumido - Vinculado a Exportação',
+            '63': 'Entrada: Crédito Presumido - Vinculado a Tributada e Não-Tributada', '64': 'Entrada: Crédito Presumido - Vinculado a Tributada e Exportação',
+            '65': 'Entrada: Crédito Presumido - Vinculado a Não-Tributada e Exportação', '66': 'Entrada: Crédito Presumido - Vinculado a Todas as Receitas',
+            '99': 'Outras Operações',
+        };
 
-        function getFiscalClassification(cst) {
-            switch (cst) {
-                case '04': return { classification: 'Lista Negativa (Monofásico - CST)', cssClass: 'classificacao-negativa' };
-                case '06': case '07': case '08': case '09': return { classification: 'Lista Positiva (Isento/Alíq. Zero - CST)', cssClass: 'classificacao-positiva' };
-                case '01': case '02': case '03': case '49': case '99': return { classification: 'Lista Neutra (Regime Geral - CST)', cssClass: 'classificacao-neutra' };
-                default: return { classification: 'Verificar CST', cssClass: 'bg-gray-200' };
-            }
-        }
+        function getFiscalClassification(cst) {
+            switch (cst) {
+                case '04': return { classification: 'Lista Negativa (Monofásico - CST)', cssClass: 'classificacao-negativa' };
+                case '06': case '07': case '08': case '09': return { classification: 'Lista Positiva (Isento/Alíq. Zero - CST)', cssClass: 'classificacao-positiva' };
+                case '01': case '02': case '03': case '49': case '99': return { classification: 'Lista Neutra (Regime Geral - CST)', cssClass: 'classificacao-neutra' };
+                default: return { classification: 'Verificar CST', cssClass: 'bg-gray-200' };
+            }
+        }
 
-        function getInternalClassification(infAdProd) {
-            if (!infAdProd) return null;
-            const match = infAdProd.trim().match(/^\((POS|NEG|NEU)\)/i);
-            if (match) return match[1].toUpperCase();
-            return null;
-        }
+        function getInternalClassification(infAdProd) {
+            if (!infAdProd) return null;
+            const match = infAdProd.trim().match(/^\((POS|NEG|NEU)\)/i);
+            if (match) return match[1].toUpperCase();
+            return null;
+        }
 
-        function getIcmsStatus(icmsCode, vIcmsStValue) {
-            if (!icmsCode) return { status: 'N/D', cssClass: 'bg-gray-200', detail: '' };
-            const vIcmsStNum = parseFloat(vIcmsStValue) || 0;
-            if (icmsCode === '60' || icmsCode === '500') {
-                return { status: 'OK (ST PAGA)', cssClass: 'classificacao-positiva bg-green-100', detail: vIcmsStNum > 0 ? `(Base ST calculada)` : '' };
-            }
-            if (icmsCode === '00' || icmsCode === '10' || icmsCode === '20') {
-                if (vIcmsStNum > 0) {
-                    return { status: 'ST DESTACADA (CONFERIR)', cssClass: 'alerta-st-destacada', detail: `CST: ${icmsCode}. Vlr ST: R$ ${formatCurrency(vIcmsStNum)}` };
-                } else {
-                    return { status: 'VERIFICAR ST! (RISCO ALTO)', cssClass: 'alerta-risco', detail: `CST: ${icmsCode}. Vlr ST: R$ 0,00` };
-                }
-            }
-            if (['30', '40', '41', '90', '102', '103', '202', '300', '400', '900'].includes(icmsCode)) {
-                return { status: 'ISENTO/OUTROS (Conferir)', cssClass: 'classificacao-neutra bg-yellow-50', detail: vIcmsStNum > 0 ? `(Vlr ST: R$ ${formatCurrency(vIcmsStNum)})` : '' };
-            }
-            return { status: 'VERIFICAR CST NÃO PADRÃO', cssClass: 'bg-gray-200', detail: '' };
-        }
+        function getIcmsStatus(icmsCode, vIcmsStValue) {
+            if (!icmsCode) return { status: 'N/D', cssClass: 'bg-gray-200', detail: '' };
+            const vIcmsStNum = parseFloat(vIcmsStValue) || 0;
+            if (icmsCode === '60' || icmsCode === '500') {
+                return { status: 'OK (ST PAGA)', cssClass: 'classificacao-positiva bg-green-100', detail: vIcmsStNum > 0 ? `(Base ST calculada)` : '' };
+            }
+            if (icmsCode === '00' || icmsCode === '10' || icmsCode === '20') {
+                if (vIcmsStNum > 0) {
+                    return { status: 'ST DESTACADA (CONFERIR)', cssClass: 'alerta-st-destacada', detail: `CST: ${icmsCode}. Vlr ST: R$ ${formatCurrency(vIcmsStNum)}` };
+                } else {
+                    return { status: 'VERIFICAR ST! (RISCO ALTO)', cssClass: 'alerta-risco', detail: `CST: ${icmsCode}. Vlr ST: R$ 0,00` };
+                }
+            }
+            if (['30', '40', '41', '90', '102', '103', '202', '300', '400', '900'].includes(icmsCode)) {
+                return { status: 'ISENTO/OUTROS (Conferir)', cssClass: 'classificacao-neutra bg-yellow-50', detail: vIcmsStNum > 0 ? `(Vlr ST: R$ ${formatCurrency(vIcmsStNum)})` : '' };
+            }
+            return { status: 'VERIFICAR CST NÃO PADRÃO', cssClass: 'bg-gray-200', detail: '' };
+        }
 
-        function getMeaning(code, map) {
-            return map[code] || 'Código não mapeado';
-        }
+        function getMeaning(code, map) {
+            return map[code] || 'Código não mapeado';
+        }
 
-        function handleFileSelect(event) {
-            const files = event.target.files;
-            resultsArea.innerHTML = '';
-            messageArea.innerHTML = '';
-            if (files.length === 0) {
-                resultsArea.innerHTML = '<p class="text-gray-600">Aguardando a seleção dos arquivos XML...</p>';
-                return;
-            }
-            resultsArea.innerHTML = '<p class="text-blue-500 font-semibold mb-4">Processando arquivos...</p>';
-            let filesProcessed = 0;
-            let foundValidNfe = false;
-            Array.from(files).forEach(file => {
-                const reader = new FileReader();
-                reader.onload = e => {
-                    try {
-                        if (processXml(file.name, e.target.result)) {
-                            foundValidNfe = true;
-                        }
-                    } catch (error) {
-                        displayMessage('error', `Erro interno ao processar ${file.name}: ${error.message}`);
-                    } finally {
-                        filesProcessed++;
-                        if (filesProcessed === files.length) {
-                            const processingMsg = resultsArea.querySelector('.text-blue-500');
-                            if (processingMsg) processingMsg.remove();
-                            if (!foundValidNfe) {
-                                resultsArea.innerHTML = '<p class="error text-red-600 font-semibold">Nenhuma NF-e válida encontrada.</p>';
-                            }
-                        }
-                    }
-                };
-                reader.onerror = () => displayMessage('error', `Erro ao ler o arquivo: ${file.name}`);
-                reader.readAsText(file);
-            });
-        }
+        function handleFileSelect(event) {
+            const files = event.target.files;
+            resultsArea.innerHTML = '';
+            messageArea.innerHTML = '';
+            if (files.length === 0) {
+                resultsArea.innerHTML = '<p class="text-gray-600">Aguardando a seleção dos arquivos XML...</p>';
+                return;
+            }
+            resultsArea.innerHTML = '<p class="text-blue-500 font-semibold mb-4">Processando arquivos...</p>';
+            let filesProcessed = 0;
+            let foundValidNfe = false;
+            Array.from(files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    try {
+                        if (processXml(file.name, e.target.result)) {
+                            foundValidNfe = true;
+                        }
+                    } catch (error) {
+                        displayMessage('error', `Erro interno ao processar ${file.name}: ${error.message}`);
+                    } finally {
+                        filesProcessed++;
+                        if (filesProcessed === files.length) {
+                            const processingMsg = resultsArea.querySelector('.text-blue-500');
+                            if (processingMsg) processingMsg.remove();
+                            if (!foundValidNfe) {
+                                resultsArea.innerHTML = '<p class="error text-red-600 font-semibold">Nenhuma NF-e válida encontrada.</p>';
+                            }
+                        }
+                    }
+                };
+                reader.onerror = () => displayMessage('error', `Erro ao ler o arquivo: ${file.name}`);
+                reader.readAsText(file);
+            });
+        }
 
-        function processXml(fileName, xmlString) {
-            const xmlDoc = parser.parseFromString(xmlString, "text/xml");
-            if (xmlDoc.getElementsByTagName('parsererror').length > 0) {
-                displayMessage('error', `Erro de parsing no XML: ${fileName}.`);
-                return false;
-            }
-            const nfeElement = xmlDoc.getElementsByTagName('infNFe')[0];
-            if (!nfeElement) {
-                displayMessage('error', `Arquivo ${fileName} não é uma NF-e válida.`);
-                return false;
-            }
-            const nNF = safeQuery(nfeElement, 'ide/nNF') || 'N/A';
-            const cnpjEmit = safeQuery(nfeElement, 'emit/CNPJ') || 'N/A';
-            const xNomeEmit = safeQuery(nfeElement, 'emit/xNome') || 'N/A';
-            const detElements = xmlDoc.getElementsByTagName('det');
-            if (detElements.length === 0) {
-                displayMessage('warning', `Nota ${nNF} (${fileName}) não possui itens.`);
-                return true;
-            }
-            
-            const processingMsg = resultsArea.querySelector('.text-blue-500');
-            if (processingMsg) processingMsg.remove();
+        function processXml(fileName, xmlString) {
+            const xmlDoc = parser.parseFromString(xmlString, "text/xml");
+            if (xmlDoc.getElementsByTagName('parsererror').length > 0) {
+                displayMessage('error', `Erro de parsing no XML: ${fileName}.`);
+                return false;
+            }
+            const nfeElement = xmlDoc.getElementsByTagName('infNFe')[0];
+            if (!nfeElement) {
+                displayMessage('error', `Arquivo ${fileName} não é uma NF-e válida.`);
+                return false;
+            }
+            const nNF = safeQuery(nfeElement, 'ide/nNF') || 'N/A';
+            const cnpjEmit = safeQuery(nfeElement, 'emit/CNPJ') || 'N/A';
+            const xNomeEmit = safeQuery(nfeElement, 'emit/xNome') || 'N/A';
+            const detElements = xmlDoc.getElementsByTagName('det');
+            if (detElements.length === 0) {
+                displayMessage('warning', `Nota ${nNF} (${fileName}) não possui itens.`);
+                return true;
+            }
+            
+            const processingMsg = resultsArea.querySelector('.text-blue-500');
+            if (processingMsg) processingMsg.remove();
 
-            const container = document.createElement('div');
-            container.className = 'nfeContainer bg-white p-6 shadow-xl rounded-xl mb-8 border-l-4 border-blue-600';
-            container.innerHTML = `
-                <div class="nfeHeader text-xl font-bold text-gray-800 mb-4">NF-e: <span class="text-blue-600">${nNF}</span> | Emitente: ${xNomeEmit} (CNPJ: ${cnpjEmit})</div>
-                <div class="table-responsive">
-                    <table class="w-full text-left border border-gray-300 rounded-lg">
-                        <thead>
-                            <tr class="bg-blue-50 text-blue-700">
-                                <th class="rounded-tl-lg">Cód. Forn.</th><th>Descrição do Produto</th><th>Cód. Barras (EAN)</th>
-                                <th>Cód. ANVISA</th>                                 <th>ICMS (CST/CSOSN) & NCM</th><th class="bg-pink-200 text-pink-800">Situação ICMS (ST)</th>
-                                <th>CST PIS</th><th>CST COFINS</th><th class="bg-blue-200 text-blue-800">Classificação PIS/COFINS</th> 
-                                <th>Lote / Datas</th><th class="price-cell">Vlr Unit. (R$)</th><th class="rounded-tr-lg">PMP/PMC</th> 
-                            </tr>
-                        </thead>
-                        <tbody>${Array.from(detElements).map(det => extractItemData(det)).join('')}</tbody>
-                    </table>
-                </div>`;
-            resultsArea.appendChild(container);
+            const container = document.createElement('div');
+            container.className = 'nfeContainer bg-white p-6 shadow-xl rounded-xl mb-8 border-l-4 border-blue-600';
+            container.innerHTML = `
+                <div class="nfeHeader text-xl font-bold text-gray-800 mb-4">NF-e: <span class="text-blue-600">${nNF}</span> | Emitente: ${xNomeEmit} (CNPJ: ${cnpjEmit})</div>
+                <div class="table-responsive">
+                    <table class="w-full text-left border border-gray-300 rounded-lg">
+                        <thead>
+                            <tr class="bg-blue-50 text-blue-700">
+                                <th class="rounded-tl-lg">Cód. Forn.</th><th>Descrição do Produto</th><th>Cód. Barras (EAN)</th>
+                                <th>Cód. ANVISA</th> <th>ICMS (CST/CSOSN) & NCM</th><th class="bg-pink-200 text-pink-800">Situação ICMS (ST)</th>
+                                <th>CST PIS</th><th>CST COFINS</th><th class="bg-blue-200 text-blue-800">Classificação PIS/COFINS</th> 
+                                <th>Lote / Datas</th><th class="price-cell">Vlr Unit. (R$)</th><th class="rounded-tr-lg">PMP/PMC</th> 
+                            </tr>
+                        </thead>
+                        <tbody>${Array.from(detElements).map(det => extractItemData(det)).join('')}</tbody>
+                    </table>
+                </div>`;
+            resultsArea.appendChild(container);
 
-            // ❌ Lógica de envio de duplicatas removida/desativada
-            /*
-            const duplicatasParaEnviar = extractDuplicatesForSheet(xmlDoc);
-            if (duplicatasParaEnviar.length > 0) {
-                duplicatasParaEnviar.forEach(dup => enviarDadosParaPlanilha(dup));
-            } else {
-                displayMessage('warning', `Aviso: Nenhuma duplicata encontrada na NF-e ${nNF} para enviar à planilha.`);
-            }
-            */
+            // ❌ Lógica de envio de duplicatas removida/desativada
+            /*
+            const duplicatasParaEnviar = extractDuplicatesForSheet(xmlDoc);
+            if (duplicatasParaEnviar.length > 0) {
+                duplicatasParaEnviar.forEach(dup => enviarDadosParaPlanilha(dup));
+            } else {
+                displayMessage('warning', `Aviso: Nenhuma duplicata encontrada na NF-e ${nNF} para enviar à planilha.`);
+            }
+            */
 
-            return true;
-        }
+            return true;
+        }
 
-        function extractItemData(detElement) {
-            const cProd = safeQuery(detElement, 'prod/cProd');
-            const xProd = safeQuery(detElement, 'prod/xProd');
-            const vUnCom = formatCurrency(safeQuery(detElement, 'prod/vUnCom'));
-            const NCM = safeQuery(detElement, 'prod/NCM');
-            const cEAN = safeQuery(detElement, 'prod/cEAN');
-            const cEANTrib = safeQuery(detElement, 'prod/cEANTrib');
-            const codigoBarras = (cEAN && cEAN !== 'SEM GTIN') ? cEAN : ((cEANTrib && cEANTrib !== 'SEM GTIN') ? cEANTrib : 'N/D');
+        function extractItemData(detElement) {
+            const cProd = safeQuery(detElement, 'prod/cProd');
+            const xProd = safeQuery(detElement, 'prod/xProd');
+            const vUnCom = formatCurrency(safeQuery(detElement, 'prod/vUnCom'));
+            const NCM = safeQuery(detElement, 'prod/NCM');
+            const cEAN = safeQuery(detElement, 'prod/cEAN');
+            const cEANTrib = safeQuery(detElement, 'prod/cEANTrib');
+            const codigoBarras = (cEAN && cEAN !== 'SEM GTIN') ? cEAN : ((cEANTrib && cEANTrib !== 'SEM GTIN') ? cEANTrib : 'N/D');
 
             // EXTRAÇÃO DO CAMPO cProdANVISA
-            const cProdANVISA = safeQuery(detElement, 'prod/cProdANVISA') || 'N/D';
+            const cProdANVISA = safeQuery(detElement, 'prod/cProdANVISA') || 'N/D';
 
-            let icmsCode = safeQuery(detElement, 'imposto/ICMS/*/CSOSN') || safeQuery(detElement, 'imposto/ICMS/*/CST');
-            const vIcmsStValue = safeQuery(detElement, 'imposto/ICMS/*/vICMSST');
-            const pisCST = safeQuery(detElement, 'imposto/PIS/*/CST') || 'N/D';
-            const cofinsCST = safeQuery(detElement, 'imposto/COFINS/*/CST') || 'N/D';
-            
-            const infAdProd = safeQuery(detElement, 'infAdProd');
-            const vPMCValue = safeQuery(detElement, 'prod/med/vPMC');
+            let icmsCode = safeQuery(detElement, 'imposto/ICMS/*/CSOSN') || safeQuery(detElement, 'imposto/ICMS/*/CST');
+            const vIcmsStValue = safeQuery(detElement, 'imposto/ICMS/*/vICMSST');
+            const pisCST = safeQuery(detElement, 'imposto/PIS/*/CST') || 'N/D';
+            const cofinsCST = safeQuery(detElement, 'imposto/COFINS/*/CST') || 'N/D';
+            
+            const infAdProd = safeQuery(detElement, 'infAdProd');
+            const vPMCValue = safeQuery(detElement, 'prod/med/vPMC');
 
-            const internalClassificationCode = getInternalClassification(infAdProd);
-            const cstClassification = getFiscalClassification(pisCST);
-            let finalClassification = {};
+            const internalClassificationCode = getInternalClassification(infAdProd);
+            const cstClassification = getFiscalClassification(pisCST);
+            let finalClassification = {};
 
-            if (internalClassificationCode) {
-                let classificationText = '', cssClass = '';
-                switch (internalClassificationCode) {
-                    case 'POS': classificationText = `POS: Lista Positiva (Fornecedor)`; cssClass = 'classificacao-positiva'; break;
-                    case 'NEG': classificationText = `NEG: Lista Negativa (Fornecedor)`; cssClass = 'classificacao-negativa'; break;
-                    case 'NEU': classificationText = `NEU: Lista Neutra (Fornecedor)`; cssClass = 'classificacao-neutra'; break;
-                }
-                finalClassification = { classification: classificationText, cssClass, calculatedCstText: `CST Fiscal: ${pisCST}` };
-            } else {
-                finalClassification = { ...cstClassification, calculatedCstText: `CST Fiscal: ${pisCST}` };
-            }
+            if (internalClassificationCode) {
+                let classificationText = '', cssClass = '';
+                switch (internalClassificationCode) {
+                    case 'POS': classificationText = `POS: Lista Positiva (Fornecedor)`; cssClass = 'classificacao-positiva'; break;
+                    case 'NEG': classificationText = `NEG: Lista Negativa (Fornecedor)`; cssClass = 'classificacao-negativa'; break;
+                    case 'NEU': classificationText = `NEU: Lista Neutra (Fornecedor)`; cssClass = 'classificacao-neutra'; break;
+                }
+                finalClassification = { classification: classificationText, cssClass, calculatedCstText: `CST Fiscal: ${pisCST}` };
+            } else {
+                finalClassification = { ...cstClassification, calculatedCstText: `CST Fiscal: ${pisCST}` };
+            }
 
-            const icmsStatus = getIcmsStatus(icmsCode, vIcmsStValue);
+            const icmsStatus = getIcmsStatus(icmsCode, vIcmsStValue);
 
-            const dFab = safeQuery(detElement, 'prod/rastro/dFab') || safeQuery(detElement, 'prod/med/dFab');
-            const dVal = safeQuery(detElement, 'prod/rastro/dVal') || safeQuery(detElement, 'prod/med/dVal');
-            const nLote = safeQuery(detElement, 'prod/rastro/nLote') || safeQuery(detElement, 'prod/med/nLote');
-            const qLote = safeQuery(detElement, 'prod/rastro/qLote') || safeQuery(detElement, 'prod/med/qLote');
+            const dFab = safeQuery(detElement, 'prod/rastro/dFab') || safeQuery(detElement, 'prod/med/dFab');
+            const dVal = safeQuery(detElement, 'prod/rastro/dVal') || safeQuery(detElement, 'prod/med/dVal');
+            const nLote = safeQuery(detElement, 'prod/rastro/nLote') || safeQuery(detElement, 'prod/med/nLote');
+            const qLote = safeQuery(detElement, 'prod/rastro/qLote') || safeQuery(detElement, 'prod/med/qLote');
 
-            const dFabFormatted = formatDate(dFab);
-            const dValFormatted = formatDate(dVal);
+            const dFabFormatted = formatDate(dFab);
+            const dValFormatted = formatDate(dVal);
 
-            let infAdProdDisplay = [];
-            if (vPMCValue) infAdProdDisplay.push(`<div class="pmc-highlight">PMC: R$ ${formatCurrency(vPMCValue)}</div>`);
-            if (infAdProd) infAdProdDisplay.push(`<div class="inf-ad-prod-highlight">${infAdProd}</div>`);
-            
-            const pmcPmpCellContent = infAdProdDisplay.join('') || 'N/D';
+            let infAdProdDisplay = [];
+            if (vPMCValue) infAdProdDisplay.push(`<div class="pmc-highlight">PMC: R$ ${formatCurrency(vPMCValue)}</div>`);
+            if (infAdProd) infAdProdDisplay.push(`<div class="inf-ad-prod-highlight">${infAdProd}</div>`);
+            
+            const pmcPmpCellContent = infAdProdDisplay.join('') || 'N/D';
 
-            const lotContent = [
-                nLote ? `Lote: ${nLote}` : '',
-                qLote ? `Qtde Lote: ${parseFloat(qLote).toFixed(2)}` : '',
-                dFabFormatted ? `Fab.: ${dFabFormatted}` : '',
-                dValFormatted ? `Val.: ${dValFormatted}` : ''
-            ].filter(Boolean).join('<br>') || 'Nenhuma informação de lote.';
+            const lotContent = [
+                nLote ? `Lote: ${nLote}` : '',
+                qLote ? `Qtde Lote: ${parseFloat(qLote).toFixed(2)}` : '',
+                dFabFormatted ? `Fab.: ${dFabFormatted}` : '',
+                dValFormatted ? `Val.: ${dValFormatted}` : ''
+            ].filter(Boolean).join('<br>') || 'Nenhuma informação de lote.';
 
-            const icmsCellContent = icmsCode ? `${icmsCode} <span class="code-meaning">(${getMeaning(icmsCode, CSOSN_MEANINGS)})</span>` : 'N/D';
-            const pisCellContent = pisCST !== 'N/D' ? `${pisCST} <span class="code-meaning">(${getMeaning(pisCST, PIS_COFINS_MEANINGS)})</span>` : 'N/D';
-            const cofinsCellContent = cofinsCST !== 'N/D' ? `${cofinsCST} <span class="code-meaning">(${getMeaning(cofinsCST, PIS_COFINS_MEANINGS)})</span>` : 'N/D';
+            const icmsCellContent = icmsCode ? `${icmsCode} <span class="code-meaning">(${getMeaning(icmsCode, CSOSN_MEANINGS)})</span>` : 'N/D';
+            const pisCellContent = pisCST !== 'N/D' ? `${pisCST} <span class="code-meaning">(${getMeaning(pisCST, PIS_COFINS_MEANINGS)})</span>` : 'N/D';
+            const cofinsCellContent = cofinsCST !== 'N/D' ? `${cofinsCST} <span class="code-meaning">(${getMeaning(cofinsCST, PIS_COFINS_MEANINGS)})</span>` : 'N/D';
 
-            return `
-                <tr class="hover:bg-gray-50 border-t border-gray-100">
-                    <td>${cProd || 'N/D'}</td><td>${xProd || 'N/D'}</td><td>${codigoBarras}</td>
-                    <td>${cProdANVISA}</td>                     <td class="bg-yellow-50">${icmsCellContent}<span class="code-meaning mt-1 text-xs">NCM: ${NCM || 'N/D'}</span></td>
-                    <td class="${icmsStatus.cssClass} text-center font-bold">${icmsStatus.status}<span class="code-meaning mt-1 text-xs text-current">${icmsStatus.detail}</span></td>
-                    <td>${pisCellContent}</td><td>${cofinsCellContent}</td>
-                    <td class="${finalClassification.cssClass} text-center font-bold">${finalClassification.classification}<span class="code-meaning mt-1 text-xs">(${finalClassification.calculatedCstText})</span></td>
-                    <td class="lot-info">${lotContent}</td><td class="font-semibold text-green-700 price-cell">${vUnCom}</td>
-                    <td>${pmcPmpCellContent}</td> 
-                </tr>`;
-        }
+            return `
+                <tr class="hover:bg-gray-50 border-t border-gray-100">
+                    <td>${cProd || 'N/D'}</td><td>${xProd || 'N/D'}</td><td>${codigoBarras}</td>
+                    <td>${cProdANVISA}</td> <td class="bg-yellow-50">${icmsCellContent}<span class="code-meaning mt-1 text-xs">NCM: ${NCM || 'N/D'}</span></td>
+                    <td class="${icmsStatus.cssClass} text-center font-bold">${icmsStatus.status}<span class="code-meaning mt-1 text-xs text-current">${icmsStatus.detail}</span></td>
+                    <td>${pisCellContent}</td><td>${cofinsCellContent}</td>
+                    <td class="${finalClassification.cssClass} text-center font-bold">${finalClassification.classification}<span class="code-meaning mt-1 text-xs">(${finalClassification.calculatedCstText})</span></td>
+                    <td class="lot-info">${lotContent}</td><td class="font-semibold text-green-700 price-cell">${vUnCom}</td>
+                    <td>${pmcPmpCellContent}</td> 
+                </tr>`;
+        }
 
-        function safeQuery(baseElement, path) {
-            const parts = path.split('/');
-            let current = baseElement;
-            for (const part of parts) {
-                if (!current) return null;
-                if (part === '*') {
-                    current = current.children[0];
-                } else {
-                    current = current.getElementsByTagName(part)[0];
-                }
-            }
-            return current ? current.textContent.trim() : null;
-        }
+        function safeQuery(baseElement, path) {
+            const parts = path.split('/');
+            let current = baseElement;
+            for (const part of parts) {
+                if (!current) return null;
+                if (part === '*') {
+                    current = current.children[0];
+                } else {
+                    current = current.getElementsByTagName(part)[0];
+                }
+            }
+            return current ? current.textContent.trim() : null;
+        }
 
-        function formatDate(dateString) {
-            if (!dateString || dateString.length < 10) return '';
-            const [year, month, day] = dateString.split('-');
-            return `${day}/${month}/${year}`;
-        }
+        function formatDate(dateString) {
+            if (!dateString || dateString.length < 10) return '';
+            const [year, month, day] = dateString.split('-');
+            return `${day}/${month}/${year}`;
+        }
 
-        function formatCurrency(value) {
-            const num = parseFloat(value);
-            return isNaN(num) ? 'N/D' : num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        }
+        function formatCurrency(value) {
+            const num = parseFloat(value);
+            return isNaN(num) ? 'N/D' : num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
 
-        function displayMessage(type, message) {
-            const cssMap = {
-                success: 'bg-green-100 border-green-400 text-green-700',
-                error: 'bg-red-100 border-red-400 text-red-700',
-                warning: 'bg-yellow-100 border-yellow-400 text-yellow-700'
-            };
-            const p = document.createElement('p');
-            p.className = `p-3 mt-2 border rounded-md text-sm font-medium ${cssMap[type] || 'bg-gray-100'}`;
-            p.textContent = message;
-            messageArea.prepend(p);
-        }
+        function displayMessage(type, message) {
+            const cssMap = {
+                success: 'bg-green-100 border-green-400 text-green-700',
+                error: 'bg-red-100 border-red-400 text-red-700',
+                warning: 'bg-yellow-100 border-yellow-400 text-yellow-700'
+            };
+            const p = document.createElement('p');
+            p.className = `p-3 mt-2 border rounded-md text-sm font-medium ${cssMap[type] || 'bg-gray-100'}`;
+            p.textContent = message;
+            messageArea.prepend(p);
+        }
 
-        // ❌ Funções de extração e envio de duplicatas removidas/desativadas
-        /*
-        function extractDuplicatesForSheet(xmlDoc) { ... }
-        async function enviarDadosParaPlanilha(dados) { ... }
-        */
-    </script>
+        // ❌ Funções de extração e envio de duplicatas removidas/desativadas
+        /*
+        function extractDuplicatesForSheet(xmlDoc) { ... }
+        async function enviarDadosParaPlanilha(dados) { ... }
+        */
+    </script>
 </body>
 </html>
