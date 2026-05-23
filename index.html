@@ -71,15 +71,18 @@
             font-weight: 700;
             border: 1px solid #fcd34d;
         }
+        /* ESTILO DO ALERTA DE ERRO DO FORNECEDOR */
         .alerta-fornecedor-erro {
-            background-color: #fef3c7;
-            color: #d97706;
-            border: 1px solid #fcd34d;
-            padding: 4px;
-            border-radius: 4px;
+            background-color: #ffedd5;
+            color: #c2410c;
+            border: 1px solid #fdba74;
+            padding: 6px;
+            border-radius: 6px;
             font-size: 0.75rem;
-            margin-top: 4px;
-            font-weight: bold;
+            margin-top: 6px;
+            display: block;
+            font-weight: 700;
+            text-align: left;
         }
     </style>
 </head>
@@ -150,7 +153,7 @@
             const cleanNcm = ncm ? ncm.replace(/\D/g, '') : '';
             const pName = productName ? productName.toUpperCase() : '';
             
-            // Lista de NCMs Monofásicas de Higiene/Perfumaria (Lei 10.147/2000) incluindo Sabonetes e Shampoos
+            // Lista de NCMs Monofásicas de Higiene/Perfumaria (Lei 10.147/2000)
             const isHigieneMonofasica = cleanNcm.startsWith('3303') || 
                                         cleanNcm.startsWith('3304') || 
                                         cleanNcm.startsWith('3305') || 
@@ -160,12 +163,12 @@
                                         cleanNcm.startsWith('34012010') || 
                                         cleanNcm.startsWith('96032100');
 
-            // Se o fornecedor mandou CST 06 mas o produto se enquadra na NCM monofásica de Higiene ou Perfumaria
+            // SE O FORNECEDOR MANDOU CST 06 MAS É HIGIENE MONOFÁSICA (EX: SABONETE)
             if (cst === '06' && (isHigieneMonofasica || pName.includes('SABONETE') || pName.includes('SHAMPOO'))) {
                 return { 
-                    classification: 'Regime Monofásico (CST 04 Correto na Saída)', 
-                    cssClass: 'classificacao-positiva border border-green-400',
-                    alert: '<div class="alerta-fornecedor-erro">FORNECEDOR ERROU: Enviou CST 06 (Alíquota Zero) em produto Monofásico. Forçar CST 04 no cadastro!</div>'
+                    classification: 'Regime Monofásico (Alerta de Desvio)', 
+                    cssClass: 'bg-orange-50 text-orange-800 border border-orange-300',
+                    alert: '<span class="alerta-fornecedor-erro">FORNECEDOR ERROU:<br>Enviou CST 06. Forçar CST 04 no cadastro de saída!</span>'
                 };
             }
 
@@ -361,7 +364,7 @@
                     <td>${cProdANVISA}</td> <td class="bg-yellow-50">${icmsCellContent}<span class="code-meaning mt-1 text-xs">NCM: ${NCM || 'N/D'}</span></td>
                     <td class="${icmsStatus.cssClass} text-center font-bold">${icmsStatus.status}<span class="code-meaning mt-1 text-xs text-current">${icmsStatus.detail}</span></td>
                     <td>${pisCellContent}</td><td>${cofinsCellContent}</td>
-                    <td class="${finalClassification.cssClass} text-center font-bold">${finalClassification.classification}<span class="code-meaning mt-1 text-xs">(${finalClassification.calculatedCstText})</span>${finalClassification.alert || ''}</td>
+                    <td class="${finalClassification.cssClass} p-2 text-center">${finalClassification.classification}<span class="code-meaning mt-1 text-xs">(${finalClassification.calculatedCstText})</span>${finalClassification.alert || ''}</td>
                     <td class="lot-info">${lotContent}</td><td class="font-semibold text-green-700 price-cell">${vUnCom}</td>
                     <td>${pmcPmpCellContent}</td> 
                 </tr>`;
