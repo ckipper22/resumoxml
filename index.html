@@ -71,7 +71,6 @@
             font-weight: 700;
             border: 1px solid #fcd34d;
         }
-        /* ESTILO DO ALERTA DE ERRO DO FORNECEDOR */
         .alerta-fornecedor-erro {
             background-color: #ffedd5;
             color: #c2410c;
@@ -148,12 +147,10 @@
             '99': 'Outras Operações',
         };
 
-        // INTELIGÊNCIA CORRETIVA: Validação cruzada de CST, NCM e Descrição do Item
         function getFiscalClassification(cst, ncm, productName) {
             const cleanNcm = ncm ? ncm.replace(/\D/g, '') : '';
             const pName = productName ? productName.toUpperCase() : '';
             
-            // Lista de NCMs Monofásicas de Higiene/Perfumaria (Lei 10.147/2000)
             const isHigieneMonofasica = cleanNcm.startsWith('3303') || 
                                         cleanNcm.startsWith('3304') || 
                                         cleanNcm.startsWith('3305') || 
@@ -163,7 +160,6 @@
                                         cleanNcm.startsWith('34012010') || 
                                         cleanNcm.startsWith('96032100');
 
-            // SE O FORNECEDOR MANDOU CST 06 MAS É HIGIENE MONOFÁSICA (EX: SABONETE)
             if (cst === '06' && (isHigieneMonofasica || pName.includes('SABONETE') || pName.includes('SHAMPOO'))) {
                 return { 
                     classification: 'Regime Monofásico (Alerta de Desvio)', 
@@ -193,13 +189,15 @@
             return null;
         }
 
+        // FUNÇÃO AJUSTADA COM SUPORTE PARA CST 70
         function getIcmsStatus(icmsCode, vIcmsStValue) {
             if (!icmsCode) return { status: 'N/D', cssClass: 'bg-gray-200', detail: '' };
             const vIcmsStNum = parseFloat(vIcmsStValue) || 0;
+            
             if (icmsCode === '60' || icmsCode === '500') {
                 return { status: 'OK (ST PAGA)', cssClass: 'classificacao-positiva bg-green-100', detail: vIcmsStNum > 0 ? `(Base ST calculada)` : '' };
             }
-            if (icmsCode === '00' || icmsCode === '10' || icmsCode === '20') {
+            if (icmsCode === '00' || icmsCode === '10' || icmsCode === '20' || icmsCode === '70') {
                 if (vIcmsStNum > 0) {
                     return { status: 'ST DESTACADA (CONFERIR)', cssClass: 'alerta-st-destacada', detail: `CST: ${icmsCode}. Vlr ST: R$ ${formatCurrency(vIcmsStNum)}` };
                 } else {
