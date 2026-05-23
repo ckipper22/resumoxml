@@ -71,6 +71,16 @@
             font-weight: 700;
             border: 1px solid #fcd34d;
         }
+        .alerta-fornecedor-erro {
+            background-color: #fef3c7;
+            color: #d97706;
+            border: 1px solid #fcd34d;
+            padding: 4px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            margin-top: 4px;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body class="p-4 sm:p-8">
@@ -98,17 +108,9 @@
         <ul class="list-disc ml-5 text-gray-700 space-y-2">
             <li><strong class="text-green-700">Regime Monofásico (CST 04):</strong> Indústria recolheu o imposto antecipadamente. O varejo no Simples Nacional tem direito a isenção/segregação na venda para não pagar duas vezes.</li>
             <li><strong class="text-indigo-900">Alíquota Zero (CST 06):</strong> Benefício geral da Lista Positiva (exige atenção nas saídas do Simples Nacional).</li>
-            <li><strong class="text-amber-700">Lista Neutra / Tributação Normal (CST 01/49/99):</strong> Produtos tributados em cada etapa da cadeia comercial (ex: anticoncepcionais da exceção legal, suplementos alimentares).</li>
+            <li><strong class="text-amber-700">Lista Neutra / Tributação Normal (CST 01/49/99):</strong> Produtos tributados em cada etapa da cadeia comercial.</li>
         </ul>
-        <p class="mt-4 text-sm text-indigo-700 font-semibold">*A classificação prioriza a informação do fornecedor (infAdProd), utilizando o CST como referência secundária na análise de entrada.</p>
-        <hr class="my-5 border-indigo-200">
-        <h2 class="text-xl font-semibold text-indigo-800 mb-3">Contexto Fiscal de ICMS (Substituição Tributária - ST)</h2>
-        <ul class="list-disc ml-5 text-gray-700 space-y-2">
-            <li><strong class="text-indigo-900">CST/CSOSN 60 ou 500:</strong> ICMS cobrado anteriormente por ST. <strong class="text-green-600">(Status OK)</strong></li>
-            <li><strong class="text-red-600">CST 00, 10, 20:</strong> Tributado Integralmente ou com ST. <strong class="text-red-600">(ALERTA DE RISCO)</strong> - Risco alto se Vlr ICMS-ST for zero.</li>
-            <li><strong class="text-indigo-900">CST 40/41, 90/900:</strong> Isenta, Não Tributada ou Outras. <strong class="text-yellow-600">(STATUS NEUTRO)</strong></li>
-        </ul>
-        <p class="mt-4 text-sm text-indigo-700 font-semibold">*A coluna "Situação ICMS" exibe o valor do **vICMSST** para auxiliar na conferência.</p>
+        <p class="mt-4 text-sm text-indigo-700 font-semibold">*O sistema realiza inteligência corretiva automática se o fornecedor enviar produtos Monofásicos com CST 06 de Alíquota Zero errada.</p>
     </div>
 
     <div id="resultsArea">
@@ -140,29 +142,44 @@
             '03': 'Saída: Tributável por Unidade de Medida', '04': 'Saída: Monofásica – Revenda a Alíquota Zero', '05': 'Saída: Substituição Tributária', 
             '06': 'Saída: Tributável a Alíquota Zero', '07': 'Saída: Operação Isenta da Contribuição', '08': 'Saída: Operação sem Incidência',
             '09': 'Saída: Operação com Suspensão da Contribuição', '49': 'Saída: Outras Operações de Saída',
-            '50': 'Entrada: Crédito Não Cumulativo - Vinculado a Receita Tributada', '51': 'Entrada: Crédito Não Cumulativo - Vinculado a Receita Não Tributada',
-            '52': 'Entrada: Crédito Não Cumulativo - Vinculado a Exportação', '53': 'Entrada: Crédito Não Cumulativo - Vinculado a Tributada e Não-Tributada',
-            '54': 'Entrada: Crédito Não Cumulativo - Vinculado a Tributada e Exportação', '55': 'Entrada: Crédito Não Cumulativo - Vinculado a Não-Tributada e Exportação',
-            '56': 'Entrada: Crédito Não Cumulativo - Vinculado a Todas as Receitas', '60': 'Entrada: Crédito Presumido - Vinculado a Receita Tributada',
-            '61': 'Entrada: Crédito Presumido - Vinculado a Receita Não Tributada', '62': 'Entrada: Crédito Presumido - Vinculado a Exportação',
-            '63': 'Entrada: Crédito Presumido - Vinculado a Tributada e Não-Tributada', '64': 'Entrada: Crédito Presumido - Vinculado a Tributada e Exportação',
-            '65': 'Entrada: Crédito Presumido - Vinculado a Não-Tributada e Exportação', '66': 'Entrada: Crédito Presumido - Vinculado a Todas as Receitas',
             '99': 'Outras Operações',
         };
 
-        // CORREÇÃO CRÍTICA APLICADA: Alinhamento das saídas de farmácia para o regime monofásico correto
-        function getFiscalClassification(cst) {
+        // INTELIGÊNCIA CORRETIVA: Validação cruzada de CST, NCM e Descrição do Item
+        function getFiscalClassification(cst, ncm, productName) {
+            const cleanNcm = ncm ? ncm.replace(/\D/g, '') : '';
+            const pName = productName ? productName.toUpperCase() : '';
+            
+            // Lista de NCMs Monofásicas de Higiene/Perfumaria (Lei 10.147/2000) incluindo Sabonetes e Shampoos
+            const isHigieneMonofasica = cleanNcm.startsWith('3303') || 
+                                        cleanNcm.startsWith('3304') || 
+                                        cleanNcm.startsWith('3305') || 
+                                        cleanNcm.startsWith('3306') || 
+                                        cleanNcm.startsWith('3307') || 
+                                        cleanNcm.startsWith('34011190') || 
+                                        cleanNcm.startsWith('34012010') || 
+                                        cleanNcm.startsWith('96032100');
+
+            // Se o fornecedor mandou CST 06 mas o produto se enquadra na NCM monofásica de Higiene ou Perfumaria
+            if (cst === '06' && (isHigieneMonofasica || pName.includes('SABONETE') || pName.includes('SHAMPOO'))) {
+                return { 
+                    classification: 'Regime Monofásico (CST 04 Correto na Saída)', 
+                    cssClass: 'classificacao-positiva border border-green-400',
+                    alert: '<div class="alerta-fornecedor-erro">FORNECEDOR ERROU: Enviou CST 06 (Alíquota Zero) em produto Monofásico. Forçar CST 04 no cadastro!</div>'
+                };
+            }
+
             switch (cst) {
                 case '04': 
-                    return { classification: 'Regime Monofásico (CST 04 - Isenção no DAS Venda)', cssClass: 'classificacao-positiva' };
+                    return { classification: 'Regime Monofásico (CST 04 - Isenção no DAS Venda)', cssClass: 'classificacao-positiva', alert: '' };
                 case '06': 
-                    return { classification: 'Alíquota Zero Geral (CST 06 - Validar no Simples)', cssClass: 'classificacao-neutra' };
+                    return { classification: 'Alíquota Zero Geral (CST 06 - Validar no Simples)', cssClass: 'classificacao-neutra', alert: '' };
                 case '07': case '08': case '09': 
-                    return { classification: 'Isento / Suspenso / Sem Incidência (CST ' + cst + ')', cssClass: 'classificacao-neutra' };
+                    return { classification: 'Isento / Suspenso / Sem Incidência (CST ' + cst + ')', cssClass: 'classificacao-neutra', alert: '' };
                 case '01': case '02': case '03': case '49': case '99': 
-                    return { classification: 'Lista Neutra / Tributação Normal (CST ' + cst + ')', cssClass: 'bg-amber-50 text-amber-800 border border-amber-200' };
+                    return { classification: 'Lista Neutra / Tributação Normal (CST ' + cst + ')', cssClass: 'bg-amber-50 text-amber-800 border border-amber-200', alert: '' };
                 default: 
-                    return { classification: 'Verificar CST Especial: ' + cst, cssClass: 'bg-gray-200' };
+                    return { classification: 'Verificar CST Especial: ' + cst, cssClass: 'bg-gray-200', alert: '' };
             }
         }
 
@@ -296,7 +313,7 @@
             const vPMCValue = safeQuery(detElement, 'prod/med/vPMC');
 
             const internalClassificationCode = getInternalClassification(infAdProd);
-            const cstClassification = getFiscalClassification(pisCST);
+            const cstClassification = getFiscalClassification(pisCST, NCM, xProd);
             let finalClassification = {};
 
             if (internalClassificationCode) {
@@ -306,7 +323,7 @@
                     case 'NEG': classificationText = `NEG: Lista Negativa (Fornecedor)`; cssClass = 'classificacao-negativa'; break;
                     case 'NEU': classificationText = `NEU: Lista Neutra (Fornecedor)`; cssClass = 'classificacao-neutra'; break;
                 }
-                finalClassification = { classification: classificationText, cssClass, calculatedCstText: `CST Fiscal Compra: ${pisCST}` };
+                finalClassification = { classification: classificationText, cssClass, calculatedCstText: `CST Fiscal Compra: ${pisCST}`, alert: '' };
             } else {
                 finalClassification = { ...cstClassification, calculatedCstText: `CST Fiscal Compra: ${pisCST}` };
             }
@@ -344,7 +361,7 @@
                     <td>${cProdANVISA}</td> <td class="bg-yellow-50">${icmsCellContent}<span class="code-meaning mt-1 text-xs">NCM: ${NCM || 'N/D'}</span></td>
                     <td class="${icmsStatus.cssClass} text-center font-bold">${icmsStatus.status}<span class="code-meaning mt-1 text-xs text-current">${icmsStatus.detail}</span></td>
                     <td>${pisCellContent}</td><td>${cofinsCellContent}</td>
-                    <td class="${finalClassification.cssClass} text-center font-bold">${finalClassification.classification}<span class="code-meaning mt-1 text-xs">(${finalClassification.calculatedCstText})</span></td>
+                    <td class="${finalClassification.cssClass} text-center font-bold">${finalClassification.classification}<span class="code-meaning mt-1 text-xs">(${finalClassification.calculatedCstText})</span>${finalClassification.alert || ''}</td>
                     <td class="lot-info">${lotContent}</td><td class="font-semibold text-green-700 price-cell">${vUnCom}</td>
                     <td>${pmcPmpCellContent}</td> 
                 </tr>`;
