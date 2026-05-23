@@ -13,7 +13,6 @@
         .table-responsive {
             overflow-x: auto;
         }
-        /* Ajustado para acomodar a nova coluna */
         table {
             min-width: 1500px; 
         }
@@ -95,13 +94,13 @@
     <div id="message-area" class="mb-4 space-y-2"></div>
     
     <div id="fiscalLegend" class="bg-indigo-50 p-5 shadow-inner rounded-xl mb-8 border-l-4 border-indigo-400">
-        <h2 class="text-xl font-semibold text-indigo-800 mb-3">Contexto Fiscal de PIS/COFINS (Medicamentos)</h2>
+        <h2 class="text-xl font-semibold text-indigo-800 mb-3">Contexto Fiscal de PIS/COFINS (Medicamentos e Cosméticos)</h2>
         <ul class="list-disc ml-5 text-gray-700 space-y-2">
-            <li><strong class="text-indigo-900">Lista Positiva:</strong> Isento ou Alíquota Zero/Suspensão.</li>
-            <li><strong class="text-indigo-900">Lista Negativa (Monofásico):</strong> Indústria paga com alíquota majorada. Revenda tem Alíquota Zero (CST 04).</li>
-            <li><strong class="text-indigo-900">Lista Neutra (Regime Geral):</strong> PIS/COFINS cobrado em cada etapa (CST 01/02/03/49/99).</li>
+            <li><strong class="text-green-700">Regime Monofásico (CST 04):</strong> Indústria recolheu o imposto antecipadamente. O varejo no Simples Nacional tem direito a isenção/segregação na venda para não pagar duas vezes.</li>
+            <li><strong class="text-indigo-900">Alíquota Zero (CST 06):</strong> Benefício geral da Lista Positiva (exige atenção nas saídas do Simples Nacional).</li>
+            <li><strong class="text-amber-700">Lista Neutra / Tributação Normal (CST 01/49/99):</strong> Produtos tributados em cada etapa da cadeia comercial (ex: anticoncepcionais da exceção legal, suplementos alimentares).</li>
         </ul>
-        <p class="mt-4 text-sm text-indigo-700 font-semibold">*A classificação prioriza a informação do fornecedor (infAdProd), usando o CST como referência secundária.</p>
+        <p class="mt-4 text-sm text-indigo-700 font-semibold">*A classificação prioriza a informação do fornecedor (infAdProd), utilizando o CST como referência secundária na análise de entrada.</p>
         <hr class="my-5 border-indigo-200">
         <h2 class="text-xl font-semibold text-indigo-800 mb-3">Contexto Fiscal de ICMS (Substituição Tributária - ST)</h2>
         <ul class="list-disc ml-5 text-gray-700 space-y-2">
@@ -117,11 +116,6 @@
     </div>
 
     <script>
-        // =================================================================================
-        // ❌ 1. CONFIGURAÇÃO ANTERIOR DO LINK REMOVIDA
-        // =================================================================================
-        // const WEB_APP_URL = '...'; // REMOVIDO
-        
         const xmlInput = document.getElementById('xmlInput');
         const resultsArea = document.getElementById('resultsArea');
         const messageArea = document.getElementById('message-area');
@@ -132,7 +126,7 @@
         const CSOSN_MEANINGS = {
             '00': 'CST - Tributada integralmente', '10': 'CST - Tributada e com ST', '20': 'CST - Com redução da Base de Cálculo',
             '30': 'CST - Isenta / Não tributada e com ST', '40': 'CST - Isenta', '41': 'CST - Não tributada',
-            '50': 'CST - Com suspensão', '51': 'CST - Com diferimento', '60': 'CST - ICMS cobrado por ST (Substituído)',
+            '50': 'CST - Com segurança / suspensão', '51': 'CST - Com diferimento', '60': 'CST - ICMS cobrado por ST (Substituído)',
             '70': 'CST - Com redução da BC e cobrança do ICMS por ST', '90': 'CST - Outras',
             '101': 'CSOSN - Tributada SN com permissão de crédito', '102': 'CSOSN - Tributada SN sem permissão de crédito',
             '103': 'CSOSN - Isenção ICMS SN para faixa de receita bruta', '201': 'CSOSN - Tributada SN com crédito e ICMS cobrado por ST',
@@ -156,12 +150,19 @@
             '99': 'Outras Operações',
         };
 
+        // CORREÇÃO CRÍTICA APLICADA: Alinhamento das saídas de farmácia para o regime monofásico correto
         function getFiscalClassification(cst) {
             switch (cst) {
-                case '04': return { classification: 'Lista Negativa (Monofásico - CST)', cssClass: 'classificacao-negativa' };
-                case '06': case '07': case '08': case '09': return { classification: 'Lista Positiva (Isento/Alíq. Zero - CST)', cssClass: 'classificacao-positiva' };
-                case '01': case '02': case '03': case '49': case '99': return { classification: 'Lista Neutra (Regime Geral - CST)', cssClass: 'classificacao-neutra' };
-                default: return { classification: 'Verificar CST', cssClass: 'bg-gray-200' };
+                case '04': 
+                    return { classification: 'Regime Monofásico (CST 04 - Isenção no DAS Venda)', cssClass: 'classificacao-positiva' };
+                case '06': 
+                    return { classification: 'Alíquota Zero Geral (CST 06 - Validar no Simples)', cssClass: 'classificacao-neutra' };
+                case '07': case '08': case '09': 
+                    return { classification: 'Isento / Suspenso / Sem Incidência (CST ' + cst + ')', cssClass: 'classificacao-neutra' };
+                case '01': case '02': case '03': case '49': case '99': 
+                    return { classification: 'Lista Neutra / Tributação Normal (CST ' + cst + ')', cssClass: 'bg-amber-50 text-amber-800 border border-amber-200' };
+                default: 
+                    return { classification: 'Verificar CST Especial: ' + cst, cssClass: 'bg-gray-200' };
             }
         }
 
@@ -272,17 +273,6 @@
                     </table>
                 </div>`;
             resultsArea.appendChild(container);
-
-            // ❌ Lógica de envio de duplicatas removida/desativada
-            /*
-            const duplicatasParaEnviar = extractDuplicatesForSheet(xmlDoc);
-            if (duplicatasParaEnviar.length > 0) {
-                duplicatasParaEnviar.forEach(dup => enviarDadosParaPlanilha(dup));
-            } else {
-                displayMessage('warning', `Aviso: Nenhuma duplicata encontrada na NF-e ${nNF} para enviar à planilha.`);
-            }
-            */
-
             return true;
         }
 
@@ -295,7 +285,6 @@
             const cEANTrib = safeQuery(detElement, 'prod/cEANTrib');
             const codigoBarras = (cEAN && cEAN !== 'SEM GTIN') ? cEAN : ((cEANTrib && cEANTrib !== 'SEM GTIN') ? cEANTrib : 'N/D');
 
-            // EXTRAÇÃO DO CAMPO cProdANVISA
             const cProdANVISA = safeQuery(detElement, 'prod/cProdANVISA') || 'N/D';
 
             let icmsCode = safeQuery(detElement, 'imposto/ICMS/*/CSOSN') || safeQuery(detElement, 'imposto/ICMS/*/CST');
@@ -317,9 +306,9 @@
                     case 'NEG': classificationText = `NEG: Lista Negativa (Fornecedor)`; cssClass = 'classificacao-negativa'; break;
                     case 'NEU': classificationText = `NEU: Lista Neutra (Fornecedor)`; cssClass = 'classificacao-neutra'; break;
                 }
-                finalClassification = { classification: classificationText, cssClass, calculatedCstText: `CST Fiscal: ${pisCST}` };
+                finalClassification = { classification: classificationText, cssClass, calculatedCstText: `CST Fiscal Compra: ${pisCST}` };
             } else {
-                finalClassification = { ...cstClassification, calculatedCstText: `CST Fiscal: ${pisCST}` };
+                finalClassification = { ...cstClassification, calculatedCstText: `CST Fiscal Compra: ${pisCST}` };
             }
 
             const icmsStatus = getIcmsStatus(icmsCode, vIcmsStValue);
@@ -397,12 +386,6 @@
             p.textContent = message;
             messageArea.prepend(p);
         }
-
-        // ❌ Funções de extração e envio de duplicatas removidas/desativadas
-        /*
-        function extractDuplicatesForSheet(xmlDoc) { ... }
-        async function enviarDadosParaPlanilha(dados) { ... }
-        */
     </script>
 </body>
 </html>
